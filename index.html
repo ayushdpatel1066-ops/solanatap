@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Solana Miner Ultra</title>
 
-
-
-
     <!-- FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
@@ -71,7 +68,7 @@
         .screen.active { display: flex; animation: fadeUp 0.3s ease; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- MINE SCREEN (UPDATED) --- */
+        /* --- MINE SCREEN --- */
         .balance-card { text-align: center; margin-bottom: 15px; margin-top: 5px; }
         .balance-val { 
             font-size: 56px; font-weight: 900; line-height: 1;
@@ -79,7 +76,6 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-family: var(--font-main);
         }
-        .balance-lbl { font-size: 13px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-top: 5px; }
         
         .real-sol-disp {
             font-size: 14px; color: var(--sol-green); font-weight: bold;
@@ -87,29 +83,40 @@
             display: inline-block; padding: 4px 12px; border-radius: 12px; margin-top: 8px;
         }
         
-        /* Floating Telegram Button */
+        /* Floating Telegram Button Area */
+        .tg-area {
+            position: absolute; top: 0; right: 0;
+            display: flex; flex-direction: column; align-items: flex-end;
+            z-index: 20;
+        }
         .tg-float {
-            position: absolute; top: 10px; right: 0;
             background: rgba(40, 168, 233, 0.2); 
             border: 1px solid rgba(40, 168, 233, 0.5);
             padding: 8px 14px; border-radius: 50px;
             display: flex; align-items: center; gap: 6px;
             font-size: 11px; font-weight: bold; color: white;
-            cursor: pointer; z-index: 20; backdrop-filter: blur(5px);
+            cursor: pointer; backdrop-filter: blur(5px);
+        }
+        .tg-counter {
+            font-size: 9px; color: #aaa; margin-top: 4px; margin-right: 5px; font-weight: 500;
         }
         
         /* Coin & Animation */
         .miner-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; flex-direction: column; }
         .solana-coin {
-            width: 270px; height: 270px; border-radius: 50%;
+            width: 280px; height: 280px; border-radius: 50%;
             background: radial-gradient(circle, #1a1a1a, #000);
-            border: 4px solid rgba(153, 69, 255, 0.3);
-            box-shadow: 0 0 80px rgba(153, 69, 255, 0.2);
+            border: 5px solid rgba(153, 69, 255, 0.4);
+            box-shadow: 0 0 100px rgba(153, 69, 255, 0.25); /* Enhanced Glow */
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; position: relative; z-index: 5;
-            transition: transform 0.1s;
+            transition: transform 0.05s, box-shadow 0.1s;
         }
-        .solana-coin:active { transform: scale(0.96); }
+        .solana-coin:active { 
+            transform: scale(0.94); 
+            box-shadow: 0 0 40px rgba(153, 69, 255, 0.5);
+            border-color: var(--sol-green);
+        }
         .solana-coin img { width: 75%; pointer-events: none; }
         
         /* Ripple Animation Class */
@@ -166,7 +173,6 @@
             background: white; color: black; border: none; padding: 8px 16px;
             border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer; min-width: 80px;
         }
-        /* Style for completed tasks (Green border, clickable to visit) */
         .task-btn.done { 
             background: transparent; border: 1px solid var(--sol-green); color: var(--sol-green);
         }
@@ -177,6 +183,9 @@
         
         /* --- LEADERBOARD & MODALS --- */
         .lb-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        /* Style for current user in leaderboard */
+        .my-rank-row { background: rgba(20, 241, 149, 0.1); border: 1px solid var(--sol-green); border-radius: 10px; margin-bottom: 10px; }
+        
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; justify-content: center; align-items: center; }
         .modal-box { background: #181818; width: 90%; max-width: 360px; padding: 30px; border-radius: 30px; text-align: center; border: 1px solid var(--sol-purple); animation: popIn 0.3s; }
         @keyframes popIn { from { transform: scale(0.8); } to { transform: scale(1); } }
@@ -195,12 +204,6 @@
 </head>
 <body>
 
-
-
- 
-
-
-    
     <!-- HEADER -->
     <div class="header">
         <div class="user-badge glass-panel" style="padding: 6px 12px; border-radius: 30px;">
@@ -219,14 +222,16 @@
     <div id="screen-mine" class="screen active">
         <div class="balance-card">
             <div class="balance-val" id="score">0</div>
-            <!-- NEW SOLANA DISPLAY -->
             <div class="real-sol-disp">≈ <span id="real-sol">0.0000</span> SOL</div>
         </div>
 
         <div class="miner-area">
-            <!-- FLOATING TELEGRAM BUTTON (UPDATED ICON) -->
-            <div class="tg-float" onclick="tg.openLink('https://t.me/soltapcoin')">
-                <i class="ri-telegram-fill" style="font-size:16px;"></i> Join Channel
+            <!-- UPDATED TELEGRAM BUTTON & COUNTER -->
+            <div class="tg-area">
+                <div class="tg-float" onclick="tg.openLink('https://t.me/soltapcoin')">
+                    <i class="ri-telegram-fill" style="font-size:16px;"></i> Join Channel
+                </div>
+                <div class="tg-counter" id="players-count">Loading...</div>
             </div>
 
             <div class="solana-coin" id="tap-btn">
@@ -336,6 +341,7 @@
         </div>
     </div>
 
+    <!-- LEADERBOARD MODAL -->
     <div id="lb-modal" class="modal-overlay">
         <div class="modal-box" style="height: 70%; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
@@ -391,10 +397,11 @@
             if (tg.initDataUnsafe?.user) {
                 user.id = tg.initDataUnsafe.user.id.toString();
                 user.username = tg.initDataUnsafe.user.first_name;
-            } else { user.id = "test_user_final_v5"; }
+            } else { user.id = "test_user_v6_ultra"; } // Unique ID for testing
             document.getElementById('username').innerText = user.username;
 
             try {
+                // Load User
                 const snap = await get(ref(db, 'sol_users/' + user.id));
                 if (snap.exists()) {
                     const d = snap.val();
@@ -404,6 +411,10 @@
                     user.adClaims = d.adClaims || user.adClaims;
                     user.completedTasks = d.completedTasks || [];
                 } else { saveUser(); }
+
+                // Fetch Total Joined (Simulated Logic + Real Count)
+                fetchTotalPlayers();
+
             } catch (e) {}
 
             initDefaultTasks(); 
@@ -416,6 +427,21 @@
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
+
+        // --- FETCH TOTAL PLAYERS COUNT ---
+        async function fetchTotalPlayers() {
+            try {
+                // Get a shallow list of keys to count users
+                const usersSnap = await get(ref(db, 'sol_users'));
+                let count = 0;
+                usersSnap.forEach(() => { count++; }); // Count the children
+                // Update UI label
+                const countEl = document.getElementById('players-count');
+                countEl.innerText = count.toLocaleString() + " Joined";
+            } catch(e) {
+                document.getElementById('players-count').innerText = "1,000+ Joined";
+            }
+        }
 
         window.updateUI = () => {
              // 1. Level Logic
@@ -433,7 +459,7 @@
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              document.getElementById('auto-rate').innerText = user.autoMiner;
 
-             // 3. Main Page SOL equivalent (10000 Coin = 1 SOL)
+             // 3. Main Page SOL equivalent
              const solTotal = user.score / 10000;
              document.getElementById('real-sol').innerText = solTotal.toFixed(4);
 
@@ -471,24 +497,23 @@
             fl.className = 'float-txt'; fl.innerText = '+1'; 
             fl.style.left = e.clientX+'px'; fl.style.top = e.clientY+'px';
             document.body.appendChild(fl); setTimeout(()=>fl.remove(),800);
-            tg.HapticFeedback.impactOccurred('light');
+            tg.HapticFeedback.impactOccurred('medium'); // Stronger feedback
         });
 
-        // --- TASK LOGIC (Visit but no reward) ---
-        window.doT = (k, r, urlFallback) => {
+        // --- TASK LOGIC (Updated to use DB Links) ---
+        window.doT = (k, r, url) => {
             const isDone = user.completedTasks.includes(k);
-            const url = urlFallback || "https://www.instagram.com/zplaybox/";
-
+            
+            // Just open link if done
             if (isDone) {
-                // User already claimed, just allow them to re-visit link
                 tg.openLink(url);
                 return;
             }
 
-            // Normal Claim Process
+            // Task Flow
             tg.openLink(url);
             setTimeout(()=>{ 
-                if(confirm('Mission Complete?')){ 
+                if(confirm('Did you complete the mission?')){ 
                     user.score+=r; 
                     user.completedTasks.push(k); 
                     saveUser(); 
@@ -496,23 +521,39 @@
                     updateUI(); 
                     tg.showAlert("Reward Claimed!");
                 } 
-            },2000);
+            },3000);
         }
 
+        // Initialize Tasks with URLs in DB
         async function initDefaultTasks() {
              const s=await get(ref(db,'tasks'));
+             // Updated data structure with 'url'
              if(!s.exists()) set(ref(db,'tasks'), {
-                 t1:{title:"Join Community",reward:200,img:"https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url:"https://t.me/soltapcoin"},
-                 t2:{title:"Follow instgram",reward:200,img:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/1200px-Instagram_icon.png", url:"https://www.instagram.com/zplaybox/"}
+                 t1: {
+                     title: "Join SolTap Channel",
+                     reward: 500,
+                     img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", 
+                     url: "https://t.me/soltapcoin" // Specific Link
+                 },
+                 t2: {
+                     title: "Follow on Twitter",
+                     reward: 500,
+                     img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", 
+                     url: "https://twitter.com" // Placeholder
+                 }
              });
         }
+
         async function loadTasks() {
-            const s=await get(ref(db,'tasks')); const l=document.getElementById('task-list'); l.innerHTML='';
+            const s=await get(ref(db,'tasks')); 
+            const l=document.getElementById('task-list'); 
+            l.innerHTML='';
+            
             if(s.exists()) {
                 const t=s.val();
                 Object.keys(t).forEach(k=>{
                     const done=user.completedTasks.includes(k);
-                    // Updated Button Style Logic
+                    // Pass the URL from DB to the function
                     l.innerHTML+=`
                     <div class="glass-panel task-item">
                         <img src="${t[k].img}" class="task-img">
@@ -520,7 +561,7 @@
                             <div style="font-weight:bold">${t[k].title}</div>
                             <div style="color:var(--sol-green);font-size:12px">+${t[k].reward}</div>
                         </div>
-                        <button class="task-btn ${done?'done':''}" onclick="doT('${k}',${t[k].reward}, '${t[k].url || 'https://google.com'}')">
+                        <button class="task-btn ${done?'done':''}" onclick="doT('${k}',${t[k].reward}, '${t[k].url}')">
                             ${done ? 'Visited' : 'Start'}
                         </button>
                     </div>`;
@@ -548,7 +589,63 @@
             if(typeof show_10252050==='function') show_10252050({type:'inApp',inAppSettings:{frequency:2,capping:0.1,interval:30,timeout:5,everyPage:false}});
         }
 
-        window.openLeaderboard=async()=>{document.getElementById('lb-modal').style.display='flex';const l=document.getElementById('lb-list');l.innerHTML='Loading...';try{const s=await get(ref(db,'sol_users'));let ar=[];s.forEach(c=>{const p=c.val();ar.push({u:p.username,s:Number(p.score||0)});});ar.sort((a,b)=>b.s-a.s);ar=ar.slice(0,20);l.innerHTML='';ar.forEach((u,i)=>{l.innerHTML+=`<div class="lb-row"><div class="lb-rank">#${i+1}</div><div>${u.u.substring(0,15)}</div><div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(u.s).toLocaleString()}</div></div>`;});}catch(e){l.innerText="No Data";}}
+        // --- UPDATED LEADERBOARD (MY RANK FIRST) ---
+        window.openLeaderboard = async () => {
+            document.getElementById('lb-modal').style.display='flex';
+            const l = document.getElementById('lb-list');
+            l.innerHTML = 'Loading Global Data...';
+
+            try {
+                const s = await get(ref(db, 'sol_users'));
+                let ar = [];
+                
+                // 1. Process all users
+                s.forEach(c => {
+                    const p = c.val();
+                    ar.push({ id: c.key, u: p.username || "Anon", s: Number(p.score || 0) });
+                });
+
+                // 2. Sort by Score
+                ar.sort((a, b) => b.s - a.s);
+
+                // 3. Find Current User Rank
+                const myIdx = ar.findIndex(x => x.id === user.id);
+                const myRank = myIdx + 1;
+                const myData = (myIdx !== -1) ? ar[myIdx] : { u: user.username, s: user.score };
+
+                // 4. Build List
+                l.innerHTML = '';
+
+                // A. Show "Me" Section
+                l.innerHTML += `
+                    <div class="lb-row my-rank-row">
+                        <div class="lb-rank" style="color:var(--sol-green); font-weight:900;">#${myRank > 0 ? myRank : '-'}</div>
+                        <div style="font-weight:bold;">${myData.u.substring(0,15)} (You)</div>
+                        <div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(myData.s).toLocaleString()}</div>
+                    </div>
+                    <div style="text-align:center; font-size:10px; color:#666; margin-bottom:10px;">— TOP 20 —</div>
+                `;
+
+                // B. Show Top 20
+                const top20 = ar.slice(0, 20);
+                top20.forEach((u, i) => {
+                    let rankColor = "white";
+                    if(i===0) rankColor="gold";
+                    if(i===1) rankColor="silver";
+                    if(i===2) rankColor="#cd7f32";
+
+                    l.innerHTML += `
+                    <div class="lb-row">
+                        <div class="lb-rank" style="color:${rankColor}; width:30px;">#${i+1}</div>
+                        <div style="flex:1; text-align:left; padding-left:10px;">${u.u.substring(0,15)}</div>
+                        <div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(u.s).toLocaleString()}</div>
+                    </div>`;
+                });
+
+            } catch (e) {
+                l.innerText = "Error loading leaderboard.";
+            }
+        }
 
         window.nav=(id,el)=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');el.classList.add('active');};
         
