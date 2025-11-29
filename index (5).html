@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Solana Miner Ultra</title>
+
+    <!-- FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- SDKS -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://libtl.com/sdk.js" data-zone="10252050" data-sdk="show_10252050"></script>
+
+    <style>
+        :root {
+            --sol-green: #14F195;
+            --sol-purple: #9945FF;
+            --bg-dark: #000000;
+            --glass: rgba(20, 20, 20, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Outfit', sans-serif;
+            --bronze: #cd7f32;
+            --silver: #e0e0e0;
+            --gold: #ffd700;
+            --plat: #e5e4e2;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(153, 69, 255, 0.3) 0%, transparent 60%),
+                radial-gradient(circle at 50% 100%, rgba(20, 241, 149, 0.15) 0%, transparent 60%);
+            color: white;
+            font-family: var(--font-main);
+            margin: 0; height: 100vh;
+            overflow: hidden; user-select: none;
+            display: flex; flex-direction: column;
+        }
+
+        /* --- GLASS UI --- */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10;
+        }
+        .user-badge {
+            display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px;
+        }
+        .avatar {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--sol-green), var(--sol-purple));
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- SCREENS --- */
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding: 20px; padding-bottom: 100px; position:relative; }
+        .screen.active { display: flex; animation: fadeUp 0.3s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- MINE SCREEN (UPDATED) --- */
+        .balance-card { text-align: center; margin-bottom: 15px; margin-top: 5px; }
+        .balance-val { 
+            font-size: 56px; font-weight: 900; line-height: 1;
+            background: linear-gradient(to bottom, #fff, #bbb);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-family: var(--font-main);
+        }
+        .balance-lbl { font-size: 13px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-top: 5px; }
+        
+        .real-sol-disp {
+            font-size: 14px; color: var(--sol-green); font-weight: bold;
+            background: rgba(20, 241, 149, 0.1); border: 1px solid rgba(20, 241, 149, 0.3);
+            display: inline-block; padding: 4px 12px; border-radius: 12px; margin-top: 8px;
+        }
+        
+        /* Floating Telegram Button */
+        .tg-float {
+            position: absolute; top: 10px; right: 0;
+            background: rgba(40, 168, 233, 0.2); 
+            border: 1px solid rgba(40, 168, 233, 0.5);
+            padding: 8px 14px; border-radius: 50px;
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: bold; color: white;
+            cursor: pointer; z-index: 20; backdrop-filter: blur(5px);
+        }
+        
+        /* Coin & Animation */
+        .miner-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; flex-direction: column; }
+        .solana-coin {
+            width: 270px; height: 270px; border-radius: 50%;
+            background: radial-gradient(circle, #1a1a1a, #000);
+            border: 4px solid rgba(153, 69, 255, 0.3);
+            box-shadow: 0 0 80px rgba(153, 69, 255, 0.2);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; position: relative; z-index: 5;
+            transition: transform 0.1s;
+        }
+        .solana-coin:active { transform: scale(0.96); }
+        .solana-coin img { width: 75%; pointer-events: none; }
+        
+        /* Ripple Animation Class */
+        .ripple {
+            animation: pulse-ring 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(20, 241, 149, 0.5); }
+            70% { box-shadow: 0 0 0 40px rgba(20, 241, 149, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(20, 241, 149, 0); }
+        }
+
+        /* Energy Bar */
+        .energy-box { margin-top: 20px; width: 100%; }
+        .energy-info { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 5px; }
+        .energy-track { background: #222; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #333; }
+        .energy-fill {
+            height: 100%; width: 100%;
+            background: linear-gradient(90deg, var(--sol-purple), var(--sol-green));
+            transition: width 0.3s ease;
+        }
+
+        /* --- WALLET SCREEN --- */
+        .wallet-card {
+            background: linear-gradient(135deg, var(--sol-purple), #5e28a5);
+            padding: 25px; border-radius: 25px; margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(153, 69, 255, 0.3);
+        }
+        .live-price { font-size: 12px; display: flex; align-items: center; gap: 5px; margin-top:10px; opacity: 0.9;}
+        
+        .swap-container { margin-top: 20px; }
+        .swap-box {
+            background: #111; padding: 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid #333; margin-bottom: 10px;
+        }
+        .coin-select {
+            background: transparent; color: white; border: none; font-weight: bold; font-size: 16px;
+            font-family: var(--font-main); outline: none; cursor: pointer;
+        }
+        .swap-icon { width: 30px; height: 30px; border-radius: 50%; margin-right: 8px; object-fit: contain; }
+        .swap-input { background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; text-align: right; width: 150px; outline: none; font-family: var(--font-main); }
+        .btn-action {
+            width: 100%; padding: 18px; border-radius: 15px; border: none;
+            background: linear-gradient(45deg, var(--sol-green), #0abf70);
+            color: #000; font-weight: 800; font-size: 16px; margin-top: 15px;
+            cursor: pointer;
+        }
+
+        /* --- TASKS --- */
+        .task-item { display: flex; align-items: center; padding: 15px; margin-bottom: 10px; gap: 12px; }
+        .task-img { width: 42px; height: 42px; border-radius: 10px; }
+        .task-btn {
+            background: white; color: black; border: none; padding: 8px 16px;
+            border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer; min-width: 80px;
+        }
+        /* Style for completed tasks (Green border, clickable to visit) */
+        .task-btn.done { 
+            background: transparent; border: 1px solid var(--sol-green); color: var(--sol-green);
+        }
+
+        /* --- BOOST RANK IMAGES --- */
+        .ad-card { padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 160px; }
+        .rank-img { width: 60px; height: 60px; margin-bottom: 5px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2)); }
+        
+        /* --- LEADERBOARD & MODALS --- */
+        .lb-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; justify-content: center; align-items: center; }
+        .modal-box { background: #181818; width: 90%; max-width: 360px; padding: 30px; border-radius: 30px; text-align: center; border: 1px solid var(--sol-purple); animation: popIn 0.3s; }
+        @keyframes popIn { from { transform: scale(0.8); } to { transform: scale(1); } }
+
+        .float-txt { position: absolute; color: white; font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 10px var(--sol-green); font-family: var(--font-main); }
+        @keyframes floatUp { to { transform: translateY(-120px) scale(1.2); opacity: 0; } }
+
+        /* NAV */
+        .nav-bar { position: fixed; bottom: 20px; left: 20px; right: 20px; height: 75px; display: flex; justify-content: space-between; padding: 0 15px; align-items: center; z-index: 100; }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #666; font-size: 10px; gap: 5px; transition: 0.2s; cursor: pointer; width: 60px; }
+        .nav-btn.active { color: white; transform: translateY(-5px); }
+        .nav-btn i { font-size: 24px; }
+        .nav-btn.active i { color: var(--sol-green); text-shadow: 0 0 15px var(--sol-green); }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="user-badge glass-panel" style="padding: 6px 12px; border-radius: 30px;">
+            <div class="avatar"><i class="ri-user-star-fill"></i></div>
+            <div style="display:flex; flex-direction:column; margin-left:8px;">
+                <span id="username" style="font-size:12px; line-height:1;">Loading...</span>
+                <span id="rank-name" style="font-size:10px; color:var(--bronze);">Bronze Level</span>
+            </div>
+        </div>
+        <div class="glass-panel" onclick="openLeaderboard()" style="padding: 8px 12px; border-radius: 30px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; border-color: gold;">
+            <i class="ri-trophy-fill" style="color: gold;"></i> Leaderboard
+        </div>
+    </div>
+
+    <!-- 1. MINE TAB -->
+    <div id="screen-mine" class="screen active">
+        <div class="balance-card">
+            <div class="balance-val" id="score">0</div>
+            <!-- NEW SOLANA DISPLAY -->
+            <div class="real-sol-disp">≈ <span id="real-sol">0.0000</span> SOL</div>
+        </div>
+
+        <div class="miner-area">
+            <!-- FLOATING TELEGRAM BUTTON (UPDATED ICON) -->
+            <div class="tg-float" onclick="tg.openLink('https://t.me/your_channel')">
+                <i class="ri-telegram-fill" style="font-size:16px;"></i> Join Channel
+            </div>
+
+            <div class="solana-coin" id="tap-btn">
+                <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=029" alt="Solana">
+            </div>
+        </div>
+
+        <div class="energy-box">
+            <div class="energy-info">
+                <span>⚡ Energy</span>
+                <span id="energy-txt">200/200</span>
+            </div>
+            <div class="energy-track">
+                <div class="energy-fill" id="energy-fill"></div>
+            </div>
+            <div style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
+                <i class="ri-flashlight-fill" style="color: var(--sol-purple);"></i> 
+                Auto-Miner: <span id="auto-rate">0</span>/sec
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. TASKS TAB -->
+    <div id="screen-tasks" class="screen">
+        <h2 style="margin-bottom: 5px;">Missions</h2>
+        <div id="task-list"><div style="text-align:center; padding:20px; color:#666;">Loading Tasks...</div></div>
+    </div>
+
+    <!-- 3. BOOST TAB -->
+    <div id="screen-boost" class="screen">
+        <h2 style="color: var(--sol-green);">Mining Lab</h2>
+        <div class="glass-panel task-item">
+            <div style="font-size: 30px;">🤖</div>
+            <div style="flex: 1;">
+                <div style="font-weight: bold;">Auto-Bot</div>
+                <div style="font-size: 12px; color: #888;" id="bot-status">1 coin/sec (Max 10)</div>
+            </div>
+            <button class="task-btn" id="bot-btn" onclick="buyBot()">Buy 1000</button>
+        </div>
+        <h3 style="margin-top: 25px;">Magic Claims</h3>
+        <div id="ad-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
+    </div>
+
+    <!-- 4. WALLET TAB -->
+    <div id="screen-wallet" class="screen">
+        <div class="wallet-card">
+            <div style="font-size: 14px; opacity: 0.8;">Total Asset Value</div>
+            <div style="font-size: 38px; font-weight: 900; margin: 5px 0; font-family: var(--font-main);">$<span id="usd-val">0.00</span></div>
+            <div class="live-price">
+                <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="14">
+                1 SOL ≈ $<span id="sol-price">148.50</span>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 15px;">Exchange</h3>
+        <div class="swap-container">
+            <div class="swap-box">
+                <div style="display: flex; align-items: center;">
+                    <div style="width:30px; height:30px; background:radial-gradient(circle,#ffd700,#ff8c00); border-radius:50%; display:flex; justify-content:center; align-items:center; margin-right:10px; font-weight:bold; font-size:10px; color:black;">BIT</div>
+                    <div><div style="font-size: 10px; color: #888;">Spend</div><div style="font-weight: bold;">SolBits</div></div>
+                </div>
+                <div class="swap-input" id="swap-in">0</div>
+            </div>
+            <div style="text-align: center; margin: -20px 0; position: relative; z-index: 5;">
+                <i class="ri-arrow-down-double-line" style="background: #111; padding: 6px; border-radius: 50%; border: 1px solid #333; font-size:18px;"></i>
+            </div>
+            <div class="swap-box">
+                <div style="display: flex; align-items: center;">
+                    <img src="https://cryptologos.cc/logos/solana-sol-logo.png" class="swap-icon" id="target-icon">
+                    <div>
+                        <div style="font-size: 10px; color: #888;">Receive</div>
+                        <select class="coin-select" id="crypto-select" onchange="updateUI()">
+                            <option value="SOL">Solana</option>
+                            <option value="TON">TON</option>
+                            <option value="BTC">Bitcoin</option>
+                            <option value="ETH">Ethereum</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="swap-input" id="swap-out" style="color: var(--sol-green); font-size: 16px;">0.00</div>
+            </div>
+        </div>
+        <button class="btn-action" onclick="showWithdrawModal()">Connect Wallet</button>
+    </div>
+
+    <!-- NAV & MODALS -->
+    <div class="nav-bar glass-panel">
+        <div class="nav-btn active" onclick="nav('mine', this)"><i class="ri-hammer-fill"></i><span>Mine</span></div>
+        <div class="nav-btn" onclick="nav('tasks', this)"><i class="ri-list-check"></i><span>Tasks</span></div>
+        <div class="nav-btn" onclick="nav('boost', this)"><i class="ri-rocket-2-fill"></i><span>Boost</span></div>
+        <div class="nav-btn" onclick="nav('wallet', this)"><i class="ri-wallet-3-fill"></i><span>Wallet</span></div>
+    </div>
+
+    <div id="limit-modal" class="modal-overlay">
+        <div class="modal-box">
+            <i class="ri-battery-2-fill" style="font-size: 50px; color: #ff4757;"></i>
+            <h3>Energy Empty!</h3>
+            <button class="btn-action" onclick="watchRefillAd()">📺 Refill</button>
+        </div>
+    </div>
+
+    <div id="withdraw-modal" class="modal-overlay">
+        <div class="modal-box">
+            <i class="ri-lock-2-fill" style="font-size: 40px; color: #ffd700;"></i>
+            <h3>Min Withdraw $100</h3>
+            <button class="btn-action" onclick="closeWithdrawModal()">I Understand</button>
+        </div>
+    </div>
+
+    <div id="lb-modal" class="modal-overlay">
+        <div class="modal-box" style="height: 70%; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <h3 style="margin:0;">🏆 Top Miners</h3>
+                <i class="ri-close-circle-fill" style="font-size: 28px; cursor: pointer;" onclick="document.getElementById('lb-modal').style.display='none'"></i>
+            </div>
+            <div id="lb-list" style="overflow-y: auto; flex: 1; text-align: left;">Loading...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAhyInLPhouHDZCPML-AvfOcns2Li9tWmM",
+            authDomain: "facelyze.firebaseapp.com",
+            databaseURL: "https://facelyze-default-rtdb.firebaseio.com",
+            projectId: "facelyze",
+            storageBucket: "facelyze.firebasestorage.app",
+            messagingSenderId: "814580139011",
+            appId: "1:814580139011:web:55ad90f052e7de32d93a36",
+            measurementId: "G-4GZYKL9QWG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let user = { 
+            id: null, username: "Guest", score: 0, 
+            energy: 200, maxEnergy: 200, autoMiner: 0, 
+            adClaims: [0,0,0,0,0,0], completedTasks: [] 
+        };
+        const AD_SLOTS = [2, 5, 10, 15, 30, 60];
+        const AD_IMAGES = [
+            "https://cdn-icons-png.flaticon.com/512/2534/2534204.png", 
+            "https://cdn-icons-png.flaticon.com/512/2849/2849764.png", 
+            "https://cdn-icons-png.flaticon.com/512/9499/9499690.png",
+            "https://cdn-icons-png.flaticon.com/512/8146/8146757.png", 
+            "https://cdn-icons-png.flaticon.com/512/2545/2545603.png", 
+            "https://cdn-icons-png.flaticon.com/512/625/625393.png"
+        ];
+        const RATES = { 
+            SOL: { price: 148.50, icon: "https://cryptologos.cc/logos/solana-sol-logo.png" },
+            TON: { price: 5.50, icon: "https://cryptologos.cc/logos/toncoin-ton-logo.png" },
+            BTC: { price: 65000.00, icon: "https://cryptologos.cc/logos/bitcoin-btc-logo.png" },
+            ETH: { price: 3500.00, icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png" }
+        };
+
+        async function init() {
+            if (tg.initDataUnsafe?.user) {
+                user.id = tg.initDataUnsafe.user.id.toString();
+                user.username = tg.initDataUnsafe.user.first_name;
+            } else { user.id = "test_user_final_v5"; }
+            document.getElementById('username').innerText = user.username;
+
+            try {
+                const snap = await get(ref(db, 'sol_users/' + user.id));
+                if (snap.exists()) {
+                    const d = snap.val();
+                    user.score = Number(d.score || 0);
+                    user.energy = Number(d.energy ?? 200);
+                    user.autoMiner = Number(d.autoMiner || 0);
+                    user.adClaims = d.adClaims || user.adClaims;
+                    user.completedTasks = d.completedTasks || [];
+                } else { saveUser(); }
+            } catch (e) {}
+
+            initDefaultTasks(); 
+            loadTasks();
+            updateUI(); 
+            renderAds();
+            setInterval(saveUser, 4000);
+            setInterval(autoMine, 1000);
+            setInterval(checkAds, 1000);
+        }
+
+        function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
+
+        window.updateUI = () => {
+             // 1. Level Logic
+             let rank = { name: "Bronze Level", color: "var(--bronze)" };
+             if(user.score > 5000) rank = { name: "Silver Level", color: "#c0c0c0" };
+             if(user.score > 25000) rank = { name: "Gold Level", color: "var(--gold)" };
+             if(user.score > 100000) rank = { name: "Platinum Level", color: "var(--plat)" };
+             
+             const rnEl = document.getElementById('rank-name');
+             rnEl.innerText = rank.name; rnEl.style.color = rank.color;
+
+             // 2. Score & Energy
+             document.getElementById('score').innerText = Math.floor(user.score).toLocaleString();
+             document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
+             document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
+             document.getElementById('auto-rate').innerText = user.autoMiner;
+
+             // 3. Main Page SOL equivalent (10000 Coin = 1 SOL)
+             const solTotal = user.score / 10000;
+             document.getElementById('real-sol').innerText = solTotal.toFixed(4);
+
+             // 4. Wallet Page Rates
+             const bBtn = document.getElementById('bot-btn');
+             const bStat = document.getElementById('bot-status');
+             if(user.autoMiner>=10) { bBtn.innerText="MAX"; bBtn.style.background="#555"; bStat.innerText="Max (10/sec)"; }
+             else { bBtn.innerText="Buy 1000"; bStat.innerText=`${user.autoMiner}/sec (Max 10)`; }
+
+             const cur = document.getElementById('crypto-select').value;
+             document.getElementById('target-icon').src = RATES[cur].icon;
+             
+             const coinToUSD = 0.01485; 
+             const usdValue = user.score * coinToUSD;
+             document.getElementById('usd-val').innerText = usdValue.toLocaleString(undefined, {minimumFractionDigits: 2});
+             document.getElementById('swap-in').innerText = Math.floor(user.score);
+             document.getElementById('swap-out').innerText = (usdValue / RATES[cur].price).toFixed(6);
+        };
+
+        // --- GAMEPLAY ---
+        document.getElementById('tap-btn').addEventListener('click', (e) => {
+            if (user.energy <= 0) { document.getElementById('limit-modal').style.display = 'flex'; return; }
+            
+            user.score++; user.energy--; 
+            
+            // Animation Ripple
+            const coin = document.getElementById('tap-btn');
+            coin.classList.remove('ripple');
+            void coin.offsetWidth; // trigger reflow
+            coin.classList.add('ripple');
+
+            // Float Text
+            updateUI();
+            const fl = document.createElement('div');
+            fl.className = 'float-txt'; fl.innerText = '+1'; 
+            fl.style.left = e.clientX+'px'; fl.style.top = e.clientY+'px';
+            document.body.appendChild(fl); setTimeout(()=>fl.remove(),800);
+            tg.HapticFeedback.impactOccurred('light');
+        });
+
+        // --- TASK LOGIC (Visit but no reward) ---
+        window.doT = (k, r, urlFallback) => {
+            const isDone = user.completedTasks.includes(k);
+            const url = urlFallback || "https://google.com";
+
+            if (isDone) {
+                // User already claimed, just allow them to re-visit link
+                tg.openLink(url);
+                return;
+            }
+
+            // Normal Claim Process
+            tg.openLink(url);
+            setTimeout(()=>{ 
+                if(confirm('Mission Complete?')){ 
+                    user.score+=r; 
+                    user.completedTasks.push(k); 
+                    saveUser(); 
+                    loadTasks(); 
+                    updateUI(); 
+                    tg.showAlert("Reward Claimed!");
+                } 
+            },2000);
+        }
+
+        async function initDefaultTasks() {
+             const s=await get(ref(db,'tasks'));
+             if(!s.exists()) set(ref(db,'tasks'), {
+                 t1:{title:"Join Community",reward:200,img:"https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url:"https://t.me/telegram"},
+                 t2:{title:"Follow X",reward:200,img:"https://cdn-icons-png.flaticon.com/512/733/733579.png", url:"https://twitter.com"}
+             });
+        }
+        async function loadTasks() {
+            const s=await get(ref(db,'tasks')); const l=document.getElementById('task-list'); l.innerHTML='';
+            if(s.exists()) {
+                const t=s.val();
+                Object.keys(t).forEach(k=>{
+                    const done=user.completedTasks.includes(k);
+                    // Updated Button Style Logic
+                    l.innerHTML+=`
+                    <div class="glass-panel task-item">
+                        <img src="${t[k].img}" class="task-img">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold">${t[k].title}</div>
+                            <div style="color:var(--sol-green);font-size:12px">+${t[k].reward}</div>
+                        </div>
+                        <button class="task-btn ${done?'done':''}" onclick="doT('${k}',${t[k].reward}, '${t[k].url || 'https://google.com'}')">
+                            ${done ? 'Visited' : 'Start'}
+                        </button>
+                    </div>`;
+                });
+            }
+        }
+
+        // --- OTHER FUNCTIONS ---
+        window.buyBot=()=>{ if(user.autoMiner>=10)return; if(user.score>=1000){user.score-=1000;user.autoMiner++;saveUser();updateUI();}else{tg.showAlert("Need 1000 Coin");}}
+        function autoMine(){if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}}
+        
+        function renderAds(){ const g=document.getElementById('ad-grid');g.innerHTML='';AD_SLOTS.forEach((m,i)=>{
+            g.innerHTML+=`<div class="glass-panel ad-card"><img src="${AD_IMAGES[i]}" class="rank-img"><div style="font-size:11px">Wait ${m}m</div><div style="color:var(--sol-green);font-weight:bold">+${m*5}</div><button id="abtn-${i}" class="task-btn" style="width:100%" onclick="claimAd(${i},${m})">Claim</button></div>`;});}
+        
+        function checkAds(){const now=Date.now();AD_SLOTS.forEach((m,i)=>{const b=document.getElementById(`abtn-${i}`);if(b){const d=now-user.adClaims[i];const w=m*60000;if(d<w){b.disabled=true;b.style.opacity=.5;b.innerText=Math.ceil((w-d)/60000)+"m";}else{b.disabled=false;b.style.opacity=1;b.innerText="Claim";}}});}
+        
+        window.claimAd=(i,m)=>{showAd().then(()=>{user.score+=m*5;user.adClaims[i]=Date.now();saveUser();updateUI();});}
+        window.watchRefillAd=()=>{showAd().then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
+        
+        function showAd(){return new Promise((r,j)=>{if(typeof show_10252050==='function')show_10252050().then(r).catch(j);else{alert('Ad Sim');r();}});}
+
+        window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
+        window.closeWithdrawModal = () => { 
+            document.getElementById('withdraw-modal').style.display='none';
+            if(typeof show_10252050==='function') show_10252050({type:'inApp',inAppSettings:{frequency:2,capping:0.1,interval:30,timeout:5,everyPage:false}});
+        }
+
+        window.openLeaderboard=async()=>{document.getElementById('lb-modal').style.display='flex';const l=document.getElementById('lb-list');l.innerHTML='Loading...';try{const s=await get(ref(db,'sol_users'));let ar=[];s.forEach(c=>{const p=c.val();ar.push({u:p.username,s:Number(p.score||0)});});ar.sort((a,b)=>b.s-a.s);ar=ar.slice(0,20);l.innerHTML='';ar.forEach((u,i)=>{l.innerHTML+=`<div class="lb-row"><div class="lb-rank">#${i+1}</div><div>${u.u.substring(0,15)}</div><div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(u.s).toLocaleString()}</div></div>`;});}catch(e){l.innerText="No Data";}}
+
+        window.nav=(id,el)=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');el.classList.add('active');};
+        
+        document.getElementById('crypto-select').addEventListener('change', updateUI);
+        init();
+    </script>
+</body>
+</html>
