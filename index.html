@@ -9,9 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-    <!-- SDKS -->
+    <!-- SDKS (UPDATED ZONE ID) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- UPDATED AD SDK ZONE -->
     <script src="https://libtl.com/sdk.js" data-zone="10254149" data-sdk="show_10254149"></script>
 
     <style>
@@ -83,21 +82,22 @@
             background: rgba(20, 241, 149, 0.1); border: 1px solid rgba(20, 241, 149, 0.3);
             display: inline-block; padding: 4px 12px; border-radius: 12px; margin-top: 8px;
         }
-
-        /* QUICK CLAIM BUTTON (MINI) */
-        .quick-claim-area {
-            position: absolute; top: 10px; right: 10px; z-index: 20;
+        
+        /* New Mini Bonus Button (Top Right) */
+        .mini-bonus-btn {
+            position: absolute; top: 0; right: 0;
+            background: linear-gradient(135deg, #ff9966, #ff5e62);
+            padding: 8px 12px; border-radius: 20px;
+            font-size: 11px; font-weight: bold; color: white;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex; align-items: center; gap: 5px; z-index: 20;
+            transition: 0.3s;
         }
-        .quick-btn {
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            border: 2px solid #FFF; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-            color: black; font-weight: 900; font-size: 12px;
-            padding: 8px 12px; border-radius: 30px; cursor: pointer;
-            display: flex; align-items: center; gap: 5px;
-            transition: all 0.2s;
+        .mini-bonus-btn.locked {
+            filter: grayscale(1); opacity: 0.6; cursor: not-allowed;
+            background: #333;
         }
-        .quick-btn:active { transform: scale(0.9); }
-        .quick-btn.locked { background: #333; color: #888; border-color: #555; pointer-events: none; box-shadow: none; }
         
         /* Coin & Animation */
         .miner-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; flex-direction: column; }
@@ -145,21 +145,7 @@
         }
         .live-price { font-size: 12px; display: flex; align-items: center; gap: 5px; margin-top:10px; opacity: 0.9;}
         
-        /* Telegram Section Moved Here */
-        .tg-section-wallet {
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-            margin-bottom: 15px; width: 100%;
-        }
-        .tg-btn-wide {
-            background: rgba(40, 168, 233, 0.15); 
-            border: 1px solid rgba(40, 168, 233, 0.5);
-            width: 100%; padding: 12px; border-radius: 12px;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
-            font-size: 14px; font-weight: bold; color: white; cursor: pointer;
-        }
-        .tg-counter { font-size: 10px; color: #aaa; letter-spacing: 1px; }
-
-        .swap-container { margin-top: 10px; }
+        .swap-container { margin-top: 20px; }
         .swap-box {
             background: #111; padding: 15px; border-radius: 15px;
             display: flex; justify-content: space-between; align-items: center;
@@ -171,10 +157,20 @@
         }
         .swap-icon { width: 30px; height: 30px; border-radius: 50%; margin-right: 8px; object-fit: contain; }
         .swap-input { background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; text-align: right; width: 150px; outline: none; font-family: var(--font-main); }
+        
+        /* Telegram Button in Wallet */
+        .tg-join-btn {
+            background: #229ED9;
+            width: 100%; padding: 14px; border-radius: 15px; border: none;
+            color: white; font-weight: 700; font-size: 14px; margin-top: 25px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(34, 158, 217, 0.4);
+        }
+        
         .btn-action {
             width: 100%; padding: 18px; border-radius: 15px; border: none;
             background: linear-gradient(45deg, var(--sol-green), #0abf70);
-            color: #000; font-weight: 800; font-size: 16px; margin-top: 15px;
+            color: #000; font-weight: 800; font-size: 16px; margin-top: 10px;
             cursor: pointer;
         }
 
@@ -201,22 +197,6 @@
         .modal-box { background: #181818; width: 90%; max-width: 360px; padding: 30px; border-radius: 30px; text-align: center; border: 1px solid var(--sol-purple); animation: popIn 0.3s; }
         @keyframes popIn { from { transform: scale(0.8); } to { transform: scale(1); } }
 
-        /* START OVERLAY */
-        #start-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.98); z-index: 2000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .start-btn {
-            background: white; color: black; padding: 15px 40px; font-size: 20px; font-weight: 900;
-            border-radius: 50px; border: none; cursor: pointer;
-            box-shadow: 0 0 20px rgba(255,255,255,0.3);
-            animation: pulse-start 1.5s infinite;
-        }
-        @keyframes pulse-start {
-            0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); }
-        }
-
         .float-txt { position: absolute; color: white; font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 10px var(--sol-green); font-family: var(--font-main); }
         @keyframes floatUp { to { transform: translateY(-120px) scale(1.2); opacity: 0; } }
 
@@ -230,13 +210,6 @@
     </style>
 </head>
 <body>
-
-    <!-- STARTUP OVERLAY -->
-    <div id="start-overlay">
-        <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="80" style="margin-bottom: 30px;">
-        <button class="start-btn" onclick="startApp()">START MINING</button>
-        <div style="color: #666; margin-top: 15px; font-size: 12px;">Solana Miner Ultra</div>
-    </div>
 
     <!-- HEADER -->
     <div class="header">
@@ -260,11 +233,11 @@
         </div>
 
         <div class="miner-area">
-            <!-- MINI REWARD BUTTON -->
-            <div class="quick-claim-area">
-                <button id="quick-btn" class="quick-btn" onclick="claimQuickReward()">
-                    <i class="ri-gift-fill"></i> +200
-                </button>
+            <!-- MINI REWARD BUTTON (POPUP AD) -->
+            <div class="miner-area" style="position: absolute; top:0; right:0; width:auto; height:auto;">
+                <div id="mini-bonus-btn" class="mini-bonus-btn" onclick="claimMiniBonus()">
+                    <i class="ri-gift-2-fill"></i> <span id="mini-lbl">Bonus</span>
+                </div>
             </div>
 
             <div class="solana-coin" id="tap-btn">
@@ -319,14 +292,6 @@
             </div>
         </div>
 
-        <!-- TELEGRAM BUTTON MOVED HERE -->
-        <div class="tg-section-wallet">
-            <div class="tg-btn-wide" onclick="tg.openLink('https://t.me/soltapcoin')">
-                <i class="ri-telegram-fill" style="font-size:18px;"></i> Join SolTap Channel
-            </div>
-            <div class="tg-counter" id="players-count">Loading...</div>
-        </div>
-
         <h3 style="margin-bottom: 15px;">Exchange</h3>
         <div class="swap-container">
             <div class="swap-box">
@@ -355,6 +320,13 @@
                 <div class="swap-input" id="swap-out" style="color: var(--sol-green); font-size: 16px;">0.00</div>
             </div>
         </div>
+
+        <!-- TELEGRAM JOIN BUTTON MOVED HERE -->
+        <button class="tg-join-btn" onclick="tg.openLink('https://t.me/soltapcoin')">
+            <i class="ri-telegram-fill" style="font-size: 20px;"></i> Join Channel
+            <span id="wallet-players-count" style="font-size: 10px; opacity: 0.7; font-weight: 400; margin-left: 5px;">(Loading...)</span>
+        </button>
+
         <button class="btn-action" onclick="showWithdrawModal()">Connect Wallet</button>
     </div>
 
@@ -382,6 +354,7 @@
         </div>
     </div>
 
+    <!-- LEADERBOARD MODAL -->
     <div id="lb-modal" class="modal-overlay">
         <div class="modal-box" style="height: 70%; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
@@ -416,7 +389,7 @@
             id: null, username: "Guest", score: 0, 
             energy: 200, maxEnergy: 200, autoMiner: 0, 
             adClaims: [0,0,0,0,0,0], completedTasks: [],
-            quickClaimTimer: 0 // New field for mini button lock
+            lastMiniClaim: 0 // New field for Mini Button
         };
         const AD_SLOTS = [2, 5, 10, 15, 30, 60];
         const AD_IMAGES = [
@@ -434,44 +407,18 @@
             ETH: { price: 3500.00, icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png" }
         };
 
-        // --- STARTUP LOGIC ---
-        window.startApp = () => {
-            const overlay = document.getElementById('start-overlay');
-            
-            // 1. Initialize In-App Settings (Passive Ads)
-            if(typeof show_10254149 === 'function'){
-                show_10254149({
-                    type: 'inApp',
-                    inAppSettings: {
-                        frequency: 2,
-                        capping: 0.1,
-                        interval: 30,
-                        timeout: 5,
-                        everyPage: false
-                    }
-                });
-                
-                // 2. Show Interstitial to Enter
-                show_10254149().then(() => {
-                    overlay.style.display = 'none'; // Hide overlay on success
-                }).catch(e => {
-                    // If ad fails, still let user in
-                    overlay.style.display = 'none'; 
-                });
-            } else {
-                // If SDK not loaded, just let in
-                overlay.style.display = 'none';
-            }
-        };
-
         async function init() {
             if (tg.initDataUnsafe?.user) {
                 user.id = tg.initDataUnsafe.user.id.toString();
                 user.username = tg.initDataUnsafe.user.first_name;
-            } else { user.id = "test_user_final_v7"; }
+            } else { user.id = "test_user_v7_final"; } 
             document.getElementById('username').innerText = user.username;
 
+            // Trigger In-App Passive Ads immediately
+            startInAppAds();
+
             try {
+                // Load User
                 const snap = await get(ref(db, 'sol_users/' + user.id));
                 if (snap.exists()) {
                     const d = snap.val();
@@ -480,49 +427,58 @@
                     user.autoMiner = Number(d.autoMiner || 0);
                     user.adClaims = d.adClaims || user.adClaims;
                     user.completedTasks = d.completedTasks || [];
-                    user.quickClaimTimer = d.quickClaimTimer || 0;
+                    user.lastMiniClaim = Number(d.lastMiniClaim || 0);
                 } else { saveUser(); }
+
                 fetchTotalPlayers();
+
             } catch (e) {}
 
             initDefaultTasks(); 
             loadTasks();
             updateUI(); 
             renderAds();
-            checkQuickClaim(); // Check mini button status
-            
             setInterval(saveUser, 4000);
             setInterval(autoMine, 1000);
             setInterval(checkAds, 1000);
-            setInterval(checkQuickClaim, 1000);
+            setInterval(checkMiniBonus, 1000); // Check Mini Button Timer
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
 
+        // --- FETCH PLAYERS ---
         async function fetchTotalPlayers() {
             try {
                 const usersSnap = await get(ref(db, 'sol_users'));
-                let count = 0; usersSnap.forEach(() => { count++; });
-                document.getElementById('players-count').innerText = count.toLocaleString() + " Joined";
-            } catch(e) { document.getElementById('players-count').innerText = "1,000+ Joined"; }
+                let count = 0;
+                usersSnap.forEach(() => { count++; }); 
+                document.getElementById('wallet-players-count').innerText = count.toLocaleString() + " joined";
+            } catch(e) {
+                document.getElementById('wallet-players-count').innerText = "1k+ joined";
+            }
         }
 
         window.updateUI = () => {
+             // 1. Level Logic
              let rank = { name: "Bronze Level", color: "var(--bronze)" };
              if(user.score > 5000) rank = { name: "Silver Level", color: "#c0c0c0" };
              if(user.score > 25000) rank = { name: "Gold Level", color: "var(--gold)" };
              if(user.score > 100000) rank = { name: "Platinum Level", color: "var(--plat)" };
              
-             document.getElementById('rank-name').innerText = rank.name; 
-             document.getElementById('rank-name').style.color = rank.color;
+             const rnEl = document.getElementById('rank-name');
+             rnEl.innerText = rank.name; rnEl.style.color = rank.color;
 
+             // 2. Score & Energy
              document.getElementById('score').innerText = Math.floor(user.score).toLocaleString();
              document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              document.getElementById('auto-rate').innerText = user.autoMiner;
 
-             document.getElementById('real-sol').innerText = (user.score / 10000).toFixed(4);
+             // 3. Main Page SOL
+             const solTotal = user.score / 10000;
+             document.getElementById('real-sol').innerText = solTotal.toFixed(4);
 
+             // 4. Wallet Page Rates
              const bBtn = document.getElementById('bot-btn');
              const bStat = document.getElementById('bot-status');
              if(user.autoMiner>=10) { bBtn.innerText="MAX"; bBtn.style.background="#555"; bStat.innerText="Max (10/sec)"; }
@@ -530,47 +486,13 @@
 
              const cur = document.getElementById('crypto-select').value;
              document.getElementById('target-icon').src = RATES[cur].icon;
-             const usdValue = user.score * 0.01485;
+             
+             const coinToUSD = 0.01485; 
+             const usdValue = user.score * coinToUSD;
              document.getElementById('usd-val').innerText = usdValue.toLocaleString(undefined, {minimumFractionDigits: 2});
              document.getElementById('swap-in').innerText = Math.floor(user.score);
              document.getElementById('swap-out').innerText = (usdValue / RATES[cur].price).toFixed(6);
         };
-
-        // --- MINI BUTTON LOGIC (POP & LOCK) ---
-        window.claimQuickReward = () => {
-            const now = Date.now();
-            if (now < user.quickClaimTimer) return; // Locked
-
-            if (typeof show_10254149 === 'function') {
-                // Show 'pop' format
-                show_10254149('pop').then(() => {
-                    user.score += 200;
-                    user.quickClaimTimer = Date.now() + 40000; // 40 seconds lock
-                    saveUser();
-                    updateUI();
-                    checkQuickClaim();
-                    tg.showAlert("🎁 +200 Coins Claimed!");
-                }).catch(e => {
-                    console.error("Ad failed", e);
-                });
-            } else {
-                alert("Ad System Loading...");
-            }
-        };
-
-        function checkQuickClaim() {
-            const btn = document.getElementById('quick-btn');
-            const now = Date.now();
-            const diff = user.quickClaimTimer - now;
-
-            if (diff > 0) {
-                btn.classList.add('locked');
-                btn.innerHTML = `🔒 ${Math.ceil(diff / 1000)}s`;
-            } else {
-                btn.classList.remove('locked');
-                btn.innerHTML = `<i class="ri-gift-fill"></i> +200`;
-            }
-        }
 
         // --- GAMEPLAY ---
         document.getElementById('tap-btn').addEventListener('click', (e) => {
@@ -578,7 +500,8 @@
             user.score++; user.energy--; 
             const coin = document.getElementById('tap-btn');
             coin.classList.remove('ripple');
-            void coin.offsetWidth; coin.classList.add('ripple');
+            void coin.offsetWidth; 
+            coin.classList.add('ripple');
             updateUI();
             const fl = document.createElement('div');
             fl.className = 'float-txt'; fl.innerText = '+1'; 
@@ -587,22 +510,21 @@
             tg.HapticFeedback.impactOccurred('medium');
         });
 
-        // --- TASK LOGIC (DB LINK EDITABLE) ---
+        // --- TASK LOGIC (Using DB URLs) ---
         window.doT = (k, r, url) => {
-            const isDone = user.completedTasks.includes(k);
-            if (isDone) { tg.openLink(url); return; }
+            if (user.completedTasks.includes(k)) { tg.openLink(url); return; }
             tg.openLink(url);
             setTimeout(()=>{ 
-                if(confirm('Did you complete the mission?')){ 
+                if(confirm('Mission Complete?')){ 
                     user.score+=r; user.completedTasks.push(k); 
-                    saveUser(); loadTasks(); updateUI(); 
-                    tg.showAlert("Reward Claimed!");
+                    saveUser(); loadTasks(); updateUI(); tg.showAlert("Reward Claimed!");
                 } 
             },3000);
         }
 
         async function initDefaultTasks() {
              const s=await get(ref(db,'tasks'));
+             // Added URL field to task structure
              if(!s.exists()) set(ref(db,'tasks'), {
                  t1: { title: "Join SolTap Channel", reward: 500, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url: "https://t.me/soltapcoin" },
                  t2: { title: "Follow on Twitter", reward: 500, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", url: "https://twitter.com" }
@@ -615,13 +537,101 @@
                 const t=s.val();
                 Object.keys(t).forEach(k=>{
                     const done=user.completedTasks.includes(k);
-                    // Reads 'url' from DB
-                    l.innerHTML+=`<div class="glass-panel task-item"><img src="${t[k].img}" class="task-img"><div style="flex:1;"><div style="font-weight:bold">${t[k].title}</div><div style="color:var(--sol-green);font-size:12px">+${t[k].reward}</div></div><button class="task-btn ${done?'done':''}" onclick="doT('${k}',${t[k].reward}, '${t[k].url}')">${done ? 'Visited' : 'Start'}</button></div>`;
+                    l.innerHTML+=`
+                    <div class="glass-panel task-item">
+                        <img src="${t[k].img}" class="task-img">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold">${t[k].title}</div>
+                            <div style="color:var(--sol-green);font-size:12px">+${t[k].reward}</div>
+                        </div>
+                        <button class="task-btn ${done?'done':''}" onclick="doT('${k}',${t[k].reward}, '${t[k].url}')">
+                            ${done ? 'Visited' : 'Start'}
+                        </button>
+                    </div>`;
                 });
             }
         }
 
-        // --- OTHER FUNCTIONS ---
+        // --- ADS INTEGRATION (ZONE 10254149) ---
+        
+        // 1. In-App Interstitial (Passive)
+        function startInAppAds() {
+            if (typeof show_10254149 === 'function') {
+                show_10254149({
+                    type: 'inApp',
+                    inAppSettings: {
+                        frequency: 2,
+                        capping: 0.1,
+                        interval: 30,
+                        timeout: 5,
+                        everyPage: false
+                    }
+                });
+            }
+        }
+
+        // 2. Rewarded Interstitial (Standard) - Used for Boosts/Refills
+        function showRewardAd() {
+            return new Promise((resolve, reject) => {
+                if (typeof show_10254149 === 'function') {
+                    show_10254149().then(() => {
+                        resolve();
+                    }).catch(e => { resolve(); }); // Fallback to allow play if error
+                } else {
+                    alert('Ad Simulator: Reward'); resolve();
+                }
+            });
+        }
+
+        // 3. Rewarded Popup (Popup) - Used for Mini Bonus
+        function showPopupAd() {
+            return new Promise((resolve, reject) => {
+                if (typeof show_10254149 === 'function') {
+                    show_10254149('pop').then(() => {
+                        resolve();
+                    }).catch(e => { resolve(); });
+                } else {
+                    alert('Ad Simulator: Popup'); resolve();
+                }
+            });
+        }
+
+        // --- MINI BONUS LOGIC ---
+        window.claimMiniBonus = async () => {
+            const now = Date.now();
+            const elapsed = now - user.lastMiniClaim;
+            if (elapsed < 40000) return; // Still Locked
+
+            try {
+                await showPopupAd();
+                // Reward Logic
+                user.score += 200;
+                user.lastMiniClaim = Date.now();
+                saveUser();
+                updateUI();
+                tg.showAlert("Bonus: +200 Coins!");
+                checkMiniBonus(); // Update button visual immediately
+            } catch(e) {}
+        }
+
+        function checkMiniBonus() {
+            const btn = document.getElementById('mini-bonus-btn');
+            const lbl = document.getElementById('mini-lbl');
+            const now = Date.now();
+            const diff = 40000 - (now - user.lastMiniClaim);
+
+            if (diff > 0) {
+                // Locked
+                btn.classList.add('locked');
+                lbl.innerText = Math.ceil(diff / 1000) + "s";
+            } else {
+                // Unlocked
+                btn.classList.remove('locked');
+                lbl.innerText = "+200";
+            }
+        }
+
+        // --- STANDARD FUNCTIONS ---
         window.buyBot=()=>{ if(user.autoMiner>=10)return; if(user.score>=1000){user.score-=1000;user.autoMiner++;saveUser();updateUI();}else{tg.showAlert("Need 1000 Coin");}}
         function autoMine(){if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}}
         
@@ -630,32 +640,53 @@
         
         function checkAds(){const now=Date.now();AD_SLOTS.forEach((m,i)=>{const b=document.getElementById(`abtn-${i}`);if(b){const d=now-user.adClaims[i];const w=m*60000;if(d<w){b.disabled=true;b.style.opacity=.5;b.innerText=Math.ceil((w-d)/60000)+"m";}else{b.disabled=false;b.style.opacity=1;b.innerText="Claim";}}});}
         
-        window.claimAd=(i,m)=>{showAd().then(()=>{user.score+=m*5;user.adClaims[i]=Date.now();saveUser();updateUI();});}
-        window.watchRefillAd=()=>{showAd().then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
+        window.claimAd=(i,m)=>{showRewardAd().then(()=>{user.score+=m*5;user.adClaims[i]=Date.now();saveUser();updateUI();});}
+        window.watchRefillAd=()=>{showRewardAd().then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
         
-        // GENERIC SHOW AD FUNCTION (UPDATED ZONE)
-        function showAd(){
-            return new Promise((r,j)=>{
-                if(typeof show_10254149==='function') show_10254149().then(r).catch(j);
-                else { alert('Ad Sim'); r(); }
-            });
-        }
-
         window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
         window.closeWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='none'; }
 
+        // --- LEADERBOARD (Pinned User) ---
         window.openLeaderboard = async () => {
             document.getElementById('lb-modal').style.display='flex';
-            const l = document.getElementById('lb-list'); l.innerHTML = 'Loading Global Data...';
+            const l = document.getElementById('lb-list');
+            l.innerHTML = 'Loading Global Data...';
+
             try {
-                const s = await get(ref(db, 'sol_users')); let ar = [];
+                const s = await get(ref(db, 'sol_users'));
+                let ar = [];
                 s.forEach(c => { const p = c.val(); ar.push({ id: c.key, u: p.username || "Anon", s: Number(p.score || 0) }); });
                 ar.sort((a, b) => b.s - a.s);
-                const myIdx = ar.findIndex(x => x.id === user.id); const myRank = myIdx + 1; const myData = (myIdx !== -1) ? ar[myIdx] : { u: user.username, s: user.score };
-                l.innerHTML = `<div class="lb-row my-rank-row"><div class="lb-rank" style="color:var(--sol-green); font-weight:900;">#${myRank > 0 ? myRank : '-'}</div><div style="font-weight:bold;">${myData.u.substring(0,15)} (You)</div><div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(myData.s).toLocaleString()}</div></div><div style="text-align:center; font-size:10px; color:#666; margin-bottom:10px;">— TOP 20 —</div>`;
-                ar.slice(0, 20).forEach((u, i) => {
-                    let c = "white"; if(i===0)c="gold"; if(i===1)c="silver"; if(i===2)c="#cd7f32";
-                    l.innerHTML += `<div class="lb-row"><div class="lb-rank" style="color:${c}; width:30px;">#${i+1}</div><div style="flex:1; text-align:left; padding-left:10px;">${u.u.substring(0,15)}</div><div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(u.s).toLocaleString()}</div></div>`;
+
+                const myIdx = ar.findIndex(x => x.id === user.id);
+                const myRank = myIdx + 1;
+                const myData = (myIdx !== -1) ? ar[myIdx] : { u: user.username, s: user.score };
+
+                l.innerHTML = '';
+                // My Rank (Pinned)
+                l.innerHTML += `
+                    <div class="lb-row my-rank-row">
+                        <div class="lb-rank" style="color:var(--sol-green); font-weight:900;">#${myRank > 0 ? myRank : '-'}</div>
+                        <div style="font-weight:bold;">${myData.u.substring(0,15)} (You)</div>
+                        <div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(myData.s).toLocaleString()}</div>
+                    </div>
+                    <div style="text-align:center; font-size:10px; color:#666; margin-bottom:10px;">— TOP 20 —</div>
+                `;
+
+                // Top 20
+                const top20 = ar.slice(0, 20);
+                top20.forEach((u, i) => {
+                    let rankColor = "white";
+                    if(i===0) rankColor="gold";
+                    if(i===1) rankColor="silver";
+                    if(i===2) rankColor="#cd7f32";
+
+                    l.innerHTML += `
+                    <div class="lb-row">
+                        <div class="lb-rank" style="color:${rankColor}; width:30px;">#${i+1}</div>
+                        <div style="flex:1; text-align:left; padding-left:10px;">${u.u.substring(0,15)}</div>
+                        <div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(u.s).toLocaleString()}</div>
+                    </div>`;
                 });
             } catch (e) { l.innerText = "Error loading leaderboard."; }
         }
