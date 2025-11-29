@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-    <!-- SDKS (UPDATED ZONE ID) -->
+    <!-- SDKS (UPDATED ZONE 10254149) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://libtl.com/sdk.js" data-zone="10254149" data-sdk="show_10254149"></script>
 
@@ -69,36 +69,34 @@
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- MINE SCREEN --- */
-        .balance-card { text-align: center; margin-bottom: 15px; margin-top: 5px; }
+        .balance-card { text-align: center; margin-bottom: 10px; margin-top: 5px; }
         .balance-val { 
             font-size: 56px; font-weight: 900; line-height: 1;
             background: linear-gradient(to bottom, #fff, #bbb);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             font-family: var(--font-main);
         }
-        
         .real-sol-disp {
             font-size: 14px; color: var(--sol-green); font-weight: bold;
             background: rgba(20, 241, 149, 0.1); border: 1px solid rgba(20, 241, 149, 0.3);
             display: inline-block; padding: 4px 12px; border-radius: 12px; margin-top: 8px;
         }
         
-        /* New Mini Bonus Button (Top Right) */
-        .mini-bonus-btn {
-            position: absolute; top: 0; right: 0;
-            background: linear-gradient(135deg, #ff9966, #ff5e62);
-            padding: 8px 12px; border-radius: 20px;
-            font-size: 11px; font-weight: bold; color: white;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(255, 94, 98, 0.4);
-            border: 1px solid rgba(255,255,255,0.2);
-            display: flex; align-items: center; gap: 5px; z-index: 20;
-            transition: 0.3s;
+        /* MINI BONUS BUTTON (New) */
+        .mini-bonus-box {
+            position: absolute; top: 0; right: 0; z-index: 20;
+            display: flex; flex-direction: column; align-items: flex-end;
         }
-        .mini-bonus-btn.locked {
-            filter: grayscale(1); opacity: 0.6; cursor: not-allowed;
-            background: #333;
+        .mini-btn {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: 1px solid #FFF; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            color: black; font-weight: 800; font-size: 11px;
+            padding: 8px 12px; border-radius: 20px; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; transition: 0.2s;
         }
-        
+        .mini-btn:active { transform: scale(0.95); }
+        .mini-btn.locked { background: #333; border-color: #555; color: #888; pointer-events: none; box-shadow: none; }
+
         /* Coin & Animation */
         .miner-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; flex-direction: column; }
         .solana-coin {
@@ -117,10 +115,7 @@
         }
         .solana-coin img { width: 75%; pointer-events: none; }
         
-        /* Ripple Animation Class */
-        .ripple {
-            animation: pulse-ring 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
-        }
+        .ripple { animation: pulse-ring 0.4s cubic-bezier(0.215, 0.61, 0.355, 1); }
         @keyframes pulse-ring {
             0% { box-shadow: 0 0 0 0 rgba(20, 241, 149, 0.5); }
             70% { box-shadow: 0 0 0 40px rgba(20, 241, 149, 0); }
@@ -159,14 +154,13 @@
         .swap-input { background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; text-align: right; width: 150px; outline: none; font-family: var(--font-main); }
         
         /* Telegram Button in Wallet */
-        .tg-join-btn {
-            background: #229ED9;
+        .tg-wallet-btn {
             width: 100%; padding: 14px; border-radius: 15px; border: none;
-            color: white; font-weight: 700; font-size: 14px; margin-top: 25px;
+            background: rgba(40, 168, 233, 0.15); border: 1px solid rgba(40, 168, 233, 0.4);
+            color: #28a8e9; font-weight: 700; font-size: 14px; margin-top: 25px;
             cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(34, 158, 217, 0.4);
         }
-        
+
         .btn-action {
             width: 100%; padding: 18px; border-radius: 15px; border: none;
             background: linear-gradient(45deg, var(--sol-green), #0abf70);
@@ -233,11 +227,13 @@
         </div>
 
         <div class="miner-area">
-            <!-- MINI REWARD BUTTON (POPUP AD) -->
-            <div class="miner-area" style="position: absolute; top:0; right:0; width:auto; height:auto;">
-                <div id="mini-bonus-btn" class="mini-bonus-btn" onclick="claimMiniBonus()">
-                    <i class="ri-gift-2-fill"></i> <span id="mini-lbl">Bonus</span>
+            
+            <!-- NEW MINI BONUS BUTTON -->
+            <div class="mini-bonus-box">
+                <div id="mini-btn" class="mini-btn" onclick="claimMiniBonus()">
+                    <i class="ri-gift-fill"></i> <span>+200</span>
                 </div>
+                <div style="font-size:9px; color:#666; margin-top:4px;">Bonus Ad</div>
             </div>
 
             <div class="solana-coin" id="tap-btn">
@@ -321,10 +317,9 @@
             </div>
         </div>
 
-        <!-- TELEGRAM JOIN BUTTON MOVED HERE -->
-        <button class="tg-join-btn" onclick="tg.openLink('https://t.me/soltapcoin')">
-            <i class="ri-telegram-fill" style="font-size: 20px;"></i> Join Channel
-            <span id="wallet-players-count" style="font-size: 10px; opacity: 0.7; font-weight: 400; margin-left: 5px;">(Loading...)</span>
+        <!-- MOVED TELEGRAM BUTTON HERE -->
+        <button class="tg-wallet-btn" onclick="tg.openLink('https://t.me/soltapcoin')">
+            <i class="ri-telegram-fill"></i> Join Channel
         </button>
 
         <button class="btn-action" onclick="showWithdrawModal()">Connect Wallet</button>
@@ -389,7 +384,7 @@
             id: null, username: "Guest", score: 0, 
             energy: 200, maxEnergy: 200, autoMiner: 0, 
             adClaims: [0,0,0,0,0,0], completedTasks: [],
-            lastMiniClaim: 0 // New field for Mini Button
+            lastMiniClaim: 0 // New field for mini button
         };
         const AD_SLOTS = [2, 5, 10, 15, 30, 60];
         const AD_IMAGES = [
@@ -408,14 +403,14 @@
         };
 
         async function init() {
+            // Trigger In-App Interstitial Ad Logic Immediately
+            initInAppAds();
+
             if (tg.initDataUnsafe?.user) {
                 user.id = tg.initDataUnsafe.user.id.toString();
                 user.username = tg.initDataUnsafe.user.first_name;
-            } else { user.id = "test_user_v7_final"; } 
+            } else { user.id = "test_user_ad_update_v7"; }
             document.getElementById('username').innerText = user.username;
-
-            // Trigger In-App Passive Ads immediately
-            startInAppAds();
 
             try {
                 // Load User
@@ -427,11 +422,8 @@
                     user.autoMiner = Number(d.autoMiner || 0);
                     user.adClaims = d.adClaims || user.adClaims;
                     user.completedTasks = d.completedTasks || [];
-                    user.lastMiniClaim = Number(d.lastMiniClaim || 0);
+                    user.lastMiniClaim = d.lastMiniClaim || 0;
                 } else { saveUser(); }
-
-                fetchTotalPlayers();
-
             } catch (e) {}
 
             initDefaultTasks(); 
@@ -441,21 +433,68 @@
             setInterval(saveUser, 4000);
             setInterval(autoMine, 1000);
             setInterval(checkAds, 1000);
-            setInterval(checkMiniBonus, 1000); // Check Mini Button Timer
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
 
-        // --- FETCH PLAYERS ---
-        async function fetchTotalPlayers() {
-            try {
-                const usersSnap = await get(ref(db, 'sol_users'));
-                let count = 0;
-                usersSnap.forEach(() => { count++; }); 
-                document.getElementById('wallet-players-count').innerText = count.toLocaleString() + " joined";
-            } catch(e) {
-                document.getElementById('wallet-players-count').innerText = "1k+ joined";
+        // --- AD LOGIC WRAPPER (Zone 10254149) ---
+        function initInAppAds() {
+            if(typeof show_10254149 === 'function') {
+                show_10254149({
+                    type: 'inApp',
+                    inAppSettings: {
+                        frequency: 2,
+                        capping: 0.1,
+                        interval: 30,
+                        timeout: 5,
+                        everyPage: false
+                    }
+                });
             }
+        }
+
+        // Central Ad Function supporting 'rewarded' (default) and 'popup'
+        function showAd(type = 'rewarded') {
+            return new Promise((resolve, reject) => {
+                if (typeof show_10254149 !== 'function') {
+                    alert('Ad Simulation: Success'); 
+                    resolve(); 
+                    return; 
+                }
+
+                if (type === 'popup') {
+                    // Rewarded Popup
+                    show_10254149('pop').then(() => {
+                        resolve();
+                    }).catch(e => {
+                        console.log(e);
+                        reject();
+                    });
+                } else {
+                    // Rewarded Interstitial (Standard)
+                    show_10254149().then(() => {
+                        resolve();
+                    }).catch(e => {
+                        console.log(e);
+                        reject();
+                    });
+                }
+            });
+        }
+
+        // --- MINI BUTTON LOGIC ---
+        window.claimMiniBonus = () => {
+            const now = Date.now();
+            if (now - user.lastMiniClaim < 40000) return; // Still locked
+
+            // Show Popup Ad
+            showAd('popup').then(() => {
+                user.score += 200;
+                user.lastMiniClaim = Date.now();
+                saveUser();
+                updateUI();
+                tg.showAlert("Brilliant! +200 Coins");
+            });
         }
 
         window.updateUI = () => {
@@ -474,7 +513,7 @@
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              document.getElementById('auto-rate').innerText = user.autoMiner;
 
-             // 3. Main Page SOL
+             // 3. Main Page SOL equivalent
              const solTotal = user.score / 10000;
              document.getElementById('real-sol').innerText = solTotal.toFixed(4);
 
@@ -497,46 +536,71 @@
         // --- GAMEPLAY ---
         document.getElementById('tap-btn').addEventListener('click', (e) => {
             if (user.energy <= 0) { document.getElementById('limit-modal').style.display = 'flex'; return; }
+            
             user.score++; user.energy--; 
+            
+            // Animation Ripple
             const coin = document.getElementById('tap-btn');
             coin.classList.remove('ripple');
             void coin.offsetWidth; 
             coin.classList.add('ripple');
+
             updateUI();
             const fl = document.createElement('div');
             fl.className = 'float-txt'; fl.innerText = '+1'; 
             fl.style.left = e.clientX+'px'; fl.style.top = e.clientY+'px';
             document.body.appendChild(fl); setTimeout(()=>fl.remove(),800);
-            tg.HapticFeedback.impactOccurred('medium');
+            tg.HapticFeedback.impactOccurred('medium'); 
         });
 
-        // --- TASK LOGIC (Using DB URLs) ---
+        // --- TASK LOGIC (Supports URL from DB) ---
         window.doT = (k, r, url) => {
-            if (user.completedTasks.includes(k)) { tg.openLink(url); return; }
+            const isDone = user.completedTasks.includes(k);
+            if (isDone) {
+                tg.openLink(url);
+                return;
+            }
             tg.openLink(url);
             setTimeout(()=>{ 
                 if(confirm('Mission Complete?')){ 
-                    user.score+=r; user.completedTasks.push(k); 
-                    saveUser(); loadTasks(); updateUI(); tg.showAlert("Reward Claimed!");
+                    user.score+=r; 
+                    user.completedTasks.push(k); 
+                    saveUser(); 
+                    loadTasks(); 
+                    updateUI(); 
+                    tg.showAlert("Reward Claimed!");
                 } 
             },3000);
         }
 
         async function initDefaultTasks() {
              const s=await get(ref(db,'tasks'));
-             // Added URL field to task structure
              if(!s.exists()) set(ref(db,'tasks'), {
-                 t1: { title: "Join SolTap Channel", reward: 500, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url: "https://t.me/soltapcoin" },
-                 t2: { title: "Follow on Twitter", reward: 500, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", url: "https://twitter.com" }
+                 t1: {
+                     title: "Join Community",
+                     reward: 200,
+                     img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", 
+                     url: "https://t.me/soltapcoin" // Explicit URL
+                 },
+                 t2: {
+                     title: "Follow X",
+                     reward: 200,
+                     img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", 
+                     url: "https://twitter.com" // Explicit URL
+                 }
              });
         }
 
         async function loadTasks() {
-            const s=await get(ref(db,'tasks')); const l=document.getElementById('task-list'); l.innerHTML='';
+            const s=await get(ref(db,'tasks')); 
+            const l=document.getElementById('task-list'); 
+            l.innerHTML='';
+            
             if(s.exists()) {
                 const t=s.val();
                 Object.keys(t).forEach(k=>{
                     const done=user.completedTasks.includes(k);
+                    // Reads 'url' from database object
                     l.innerHTML+=`
                     <div class="glass-panel task-item">
                         <img src="${t[k].img}" class="task-img">
@@ -552,101 +616,40 @@
             }
         }
 
-        // --- ADS INTEGRATION (ZONE 10254149) ---
-        
-        // 1. In-App Interstitial (Passive)
-        function startInAppAds() {
-            if (typeof show_10254149 === 'function') {
-                show_10254149({
-                    type: 'inApp',
-                    inAppSettings: {
-                        frequency: 2,
-                        capping: 0.1,
-                        interval: 30,
-                        timeout: 5,
-                        everyPage: false
-                    }
-                });
-            }
-        }
-
-        // 2. Rewarded Interstitial (Standard) - Used for Boosts/Refills
-        function showRewardAd() {
-            return new Promise((resolve, reject) => {
-                if (typeof show_10254149 === 'function') {
-                    show_10254149().then(() => {
-                        resolve();
-                    }).catch(e => { resolve(); }); // Fallback to allow play if error
-                } else {
-                    alert('Ad Simulator: Reward'); resolve();
-                }
-            });
-        }
-
-        // 3. Rewarded Popup (Popup) - Used for Mini Bonus
-        function showPopupAd() {
-            return new Promise((resolve, reject) => {
-                if (typeof show_10254149 === 'function') {
-                    show_10254149('pop').then(() => {
-                        resolve();
-                    }).catch(e => { resolve(); });
-                } else {
-                    alert('Ad Simulator: Popup'); resolve();
-                }
-            });
-        }
-
-        // --- MINI BONUS LOGIC ---
-        window.claimMiniBonus = async () => {
-            const now = Date.now();
-            const elapsed = now - user.lastMiniClaim;
-            if (elapsed < 40000) return; // Still Locked
-
-            try {
-                await showPopupAd();
-                // Reward Logic
-                user.score += 200;
-                user.lastMiniClaim = Date.now();
-                saveUser();
-                updateUI();
-                tg.showAlert("Bonus: +200 Coins!");
-                checkMiniBonus(); // Update button visual immediately
-            } catch(e) {}
-        }
-
-        function checkMiniBonus() {
-            const btn = document.getElementById('mini-bonus-btn');
-            const lbl = document.getElementById('mini-lbl');
-            const now = Date.now();
-            const diff = 40000 - (now - user.lastMiniClaim);
-
-            if (diff > 0) {
-                // Locked
-                btn.classList.add('locked');
-                lbl.innerText = Math.ceil(diff / 1000) + "s";
-            } else {
-                // Unlocked
-                btn.classList.remove('locked');
-                lbl.innerText = "+200";
-            }
-        }
-
-        // --- STANDARD FUNCTIONS ---
+        // --- OTHER FUNCTIONS ---
         window.buyBot=()=>{ if(user.autoMiner>=10)return; if(user.score>=1000){user.score-=1000;user.autoMiner++;saveUser();updateUI();}else{tg.showAlert("Need 1000 Coin");}}
         function autoMine(){if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}}
         
         function renderAds(){ const g=document.getElementById('ad-grid');g.innerHTML='';AD_SLOTS.forEach((m,i)=>{
             g.innerHTML+=`<div class="glass-panel ad-card"><img src="${AD_IMAGES[i]}" class="rank-img"><div style="font-size:11px">Wait ${m}m</div><div style="color:var(--sol-green);font-weight:bold">+${m*5}</div><button id="abtn-${i}" class="task-btn" style="width:100%" onclick="claimAd(${i},${m})">Claim</button></div>`;});}
         
-        function checkAds(){const now=Date.now();AD_SLOTS.forEach((m,i)=>{const b=document.getElementById(`abtn-${i}`);if(b){const d=now-user.adClaims[i];const w=m*60000;if(d<w){b.disabled=true;b.style.opacity=.5;b.innerText=Math.ceil((w-d)/60000)+"m";}else{b.disabled=false;b.style.opacity=1;b.innerText="Claim";}}});}
+        function checkAds(){
+            const now=Date.now();
+            
+            // 1. Check Boost Ads
+            AD_SLOTS.forEach((m,i)=>{const b=document.getElementById(`abtn-${i}`);if(b){const d=now-user.adClaims[i];const w=m*60000;if(d<w){b.disabled=true;b.style.opacity=.5;b.innerText=Math.ceil((w-d)/60000)+"m";}else{b.disabled=false;b.style.opacity=1;b.innerText="Claim";}}});
+            
+            // 2. Check Mini Bonus Button Lock (40s)
+            const mb = document.getElementById('mini-btn');
+            const diff = now - user.lastMiniClaim;
+            if (diff < 40000) {
+                mb.classList.add('locked');
+                mb.querySelector('span').innerText = Math.ceil((40000 - diff) / 1000) + "s";
+            } else {
+                mb.classList.remove('locked');
+                mb.querySelector('span').innerText = "+200";
+            }
+        }
         
-        window.claimAd=(i,m)=>{showRewardAd().then(()=>{user.score+=m*5;user.adClaims[i]=Date.now();saveUser();updateUI();});}
-        window.watchRefillAd=()=>{showRewardAd().then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
-        
+        // Boost Ad -> Rewarded Interstitial
+        window.claimAd=(i,m)=>{showAd('rewarded').then(()=>{user.score+=m*5;user.adClaims[i]=Date.now();saveUser();updateUI();});}
+        // Refill Ad -> Rewarded Interstitial
+        window.watchRefillAd=()=>{showAd('rewarded').then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
+
         window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
         window.closeWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='none'; }
 
-        // --- LEADERBOARD (Pinned User) ---
+        // --- LEADERBOARD (MY RANK TOP) ---
         window.openLeaderboard = async () => {
             document.getElementById('lb-modal').style.display='flex';
             const l = document.getElementById('lb-list');
@@ -655,7 +658,10 @@
             try {
                 const s = await get(ref(db, 'sol_users'));
                 let ar = [];
-                s.forEach(c => { const p = c.val(); ar.push({ id: c.key, u: p.username || "Anon", s: Number(p.score || 0) }); });
+                s.forEach(c => {
+                    const p = c.val();
+                    ar.push({ id: c.key, u: p.username || "Anon", s: Number(p.score || 0) });
+                });
                 ar.sort((a, b) => b.s - a.s);
 
                 const myIdx = ar.findIndex(x => x.id === user.id);
@@ -663,7 +669,7 @@
                 const myData = (myIdx !== -1) ? ar[myIdx] : { u: user.username, s: user.score };
 
                 l.innerHTML = '';
-                // My Rank (Pinned)
+                // My Rank
                 l.innerHTML += `
                     <div class="lb-row my-rank-row">
                         <div class="lb-rank" style="color:var(--sol-green); font-weight:900;">#${myRank > 0 ? myRank : '-'}</div>
@@ -672,7 +678,6 @@
                     </div>
                     <div style="text-align:center; font-size:10px; color:#666; margin-bottom:10px;">— TOP 20 —</div>
                 `;
-
                 // Top 20
                 const top20 = ar.slice(0, 20);
                 top20.forEach((u, i) => {
@@ -688,7 +693,10 @@
                         <div class="lb-val"><img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">${Math.floor(u.s).toLocaleString()}</div>
                     </div>`;
                 });
-            } catch (e) { l.innerText = "Error loading leaderboard."; }
+
+            } catch (e) {
+                l.innerText = "Error loading leaderboard.";
+            }
         }
 
         window.nav=(id,el)=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');el.classList.add('active');};
