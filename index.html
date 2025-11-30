@@ -391,8 +391,13 @@
     <div class="nav-bar glass-panel">
         <div class="nav-btn active" onclick="nav('mine', this)"><i class="ri-hammer-fill"></i><span>Mine</span></div>
         <div class="nav-btn" onclick="nav('tasks', this)"><i class="ri-list-check"></i><span>Tasks</span></div>
-        <!-- NEW SPIN NAV -->
+        
+        <!-- SPIN MENU -->
         <div class="nav-btn" onclick="nav('spin', this)"><i class="ri-pie-chart-2-fill"></i><span>Spin</span></div>
+        
+        <!-- NEW OFFERS MENU -->
+        <div class="nav-btn" onclick="window.location.href='offers.html'"><i class="ri-store-2-fill"></i><span>Offers</span></div>
+        
         <div class="nav-btn" onclick="nav('boost', this)"><i class="ri-rocket-2-fill"></i><span>Boost</span></div>
         <div class="nav-btn" onclick="nav('wallet', this)"><i class="ri-wallet-3-fill"></i><span>Wallet</span></div>
     </div>
@@ -497,6 +502,8 @@
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                     user.id = tg.initDataUnsafe.user.id.toString();
                     user.username = tg.initDataUnsafe.user.first_name || "Miner";
+                    // SAVE ID FOR OFFERS PAGE
+                    localStorage.setItem('local_sim_id', user.id); 
                 } else {
                     const localId = localStorage.getItem('local_sim_id');
                     if(localId) {
@@ -780,20 +787,10 @@
         window.spinWheel = () => {
             if(isSpinning) return;
             
-            // 1. Show Ad First
             showAd().then(() => {
                 isSpinning = true;
                 const wheel = document.getElementById('wheel');
                 
-                // Segments (6 total, 60deg each)
-                // 0: Withdraw (0-60) -> WE AVOID THIS
-                // 1: 200 (60-120)
-                // 2: 1000 (120-180)
-                // 3: 500 (180-240)
-                // 4: 5000 (240-300)
-                // 5: 2000 (300-360)
-
-                // Define prizes mapped to indices 1-5
                 const safePrizes = [
                     { val: 200, label: "200 Coins" },
                     { val: 1000, label: "1000 Coins" },
@@ -802,15 +799,10 @@
                     { val: 2000, label: "2000 Coins" }
                 ];
 
-                // Pick random safe index (0 to 4 in array, maps to segments 1-5)
                 const randIndex = Math.floor(Math.random() * safePrizes.length);
                 const targetSegment = randIndex + 1; // 1 to 5
                 const prize = safePrizes[randIndex];
 
-                // Calculate Rotation
-                // To land on segment X, we rotate negatively to bring it to top (pointer at 0deg)
-                // Center of segment = (Segment * 60) + 30
-                // Total rot = (5 spins * 360) - (Center of Segment)
                 const segmentCenter = (targetSegment * 60) + 30;
                 const totalRot = (360 * 5) - segmentCenter;
 
@@ -827,9 +819,7 @@
                     setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)'; }, 100);
                 }, 4000);
 
-            }).catch(() => {
-                // Ad failed, do nothing
-            });
+            }).catch(() => {});
         }
 
         window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
