@@ -2,697 +2,422 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-    <title>Gold Rush Tycoon</title>
-   
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tycoon Admin Dashboard</title>
+    
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-   
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
-   
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --bg-dark: #050505;
+            --card-bg: #111;
             --gold-primary: #FFD700;
-            --gold-secondary: #FFA500;
-            --purple-accent: #9945FF;
             --text-white: #ffffff;
-            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --text-gray: #888;
             --danger: #ff4d4d;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-       
-        /* --- LAYOUT & RESPONSIVENESS --- */
-        html { height: 100%; background: #000; }
-        body {
-            height: 100%; height: 100dvh; width: 100%; overflow: hidden;
-            font-family: 'Outfit', sans-serif; color: var(--text-white);
-            touch-action: manipulation; display: flex; flex-direction: column;
-            background: radial-gradient(circle at 50% 10%, #2a1a00 0%, #000000 100%);
+            --success: #14F195;
+            --border: 1px solid #333;
         }
 
-        /* Desktop View Wrapper */
-        @media (min-width: 600px) {
-            body { max-width: 450px; margin: 0 auto; border-left: 1px solid #222; border-right: 1px solid #222; position: relative; box-shadow: 0 0 50px rgba(255,215,0,0.1); }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- LOGIN OVERLAY --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .login-box {
+            background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--gold-primary); text-align: center; width: 300px;
+        }
+        .admin-inp {
+            width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 6px;
         }
 
         /* --- HEADER --- */
         header {
-            flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 15px; padding-top: max(10px, env(safe-area-inset-top));
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
-            border-bottom: var(--glass-border); z-index: 50; height: 70px;
+            background: var(--card-bg); border-bottom: var(--border);
+            padding: 15px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
         }
-        .profile-section { display: flex; align-items: center; gap: 10px; }
-        .avatar {
-            width: 38px; height: 38px; background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
-            border-radius: 12px; display: flex; justify-content: center; align-items: center;
-            font-size: 18px; border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,215,0,0.3);
+        .brand { font-family: 'Chakra Petch', sans-serif; font-size: 20px; color: var(--gold-primary); font-weight: bold; }
+        
+        .nav-tabs { display: flex; gap: 10px; }
+        .tab-btn {
+            background: transparent; border: 1px solid #444; color: #888; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;
         }
-        .user-info { display: flex; flex-direction: column; justify-content: center; }
-        .u-name { font-size: 13px; font-weight: 800; line-height: 1.2; }
-        .u-users { font-size: 9px; color: #aaa; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
-        .live-dot { width: 6px; height: 6px; background: #14F195; border-radius: 50%; animation: blink 1s infinite; }
-        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+        .tab-btn.active { background: var(--gold-primary); color: #000; border-color: var(--gold-primary); }
 
-        .header-icons { display: flex; gap: 8px; }
-        .h-btn {
-            width: 38px; height: 38px; background: rgba(255,255,255,0.05);
-            border: var(--glass-border); border-radius: 12px; color: white;
-            font-size: 16px; display: flex; justify-content: center; align-items: center; cursor: pointer;
+        .refresh-btn {
+            background: #222; border: 1px solid #444; color: white; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s;
         }
-        #btn-wallet {
-            width: auto; padding: 0 12px; height: 38px; border-radius: 20px;
-            background: linear-gradient(135deg, #FFD700, #FFA500); color: #000;
-            border: 2px solid #fff; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-            animation: pulse-gold 2s infinite; display: flex; align-items: center;
-            justify-content: center; gap: 5px; font-family: 'Chakra Petch', sans-serif;
-            font-weight: 700; font-size: 13px; cursor: pointer;
-        }
+        .refresh-btn:hover { background: #333; }
 
-        /* --- GAME AREA --- */
-        main {
-            flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center;
-            padding: 10px; overflow-y: auto; position: relative; scrollbar-width: none;
-        }
-        main::-webkit-scrollbar { display: none; }
+        /* --- LAYOUTS --- */
+        .view-section { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .counter-box { text-align: center; margin-bottom: 5px; width: 100%; flex-shrink: 0; }
-        .main-balance {
-            font-family: 'Chakra Petch', sans-serif; font-size: clamp(36px, 10vw, 52px);
-            font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        /* --- STATS GRID --- */
+        .stats-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px; margin-bottom: 20px;
         }
-        .coin-img-small { width: clamp(24px, 6vw, 32px); height: auto; filter: drop-shadow(0 0 5px gold); }
-        .cps-pill { font-size: 11px; background: #222; border: 1px solid #333; padding: 3px 10px; border-radius: 20px; color: #aaa; display: inline-block; margin-bottom: 8px; }
-        
-        .level-hub { width: 85%; max-width: 300px; margin: 0 auto 10px auto; flex-shrink: 0; }
-        .lvl-header { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px; color: var(--gold-primary); font-weight: 600; }
-        .progress-container { width: 100%; height: 6px; background: #222; border-radius: 4px; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold-primary), var(--gold-secondary)); transition: width 0.3s ease; }
-        
-        .clicker-stage {
-            flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; position: relative; min-height: 180px;
+        .stat-card {
+            background: var(--card-bg); border: var(--border); padding: 15px; border-radius: 10px;
         }
-        #main-coin {
-            width: 55vw; max-width: 260px; min-width: 160px; max-height: 35vh; height: auto;
-            cursor: pointer; filter: drop-shadow(0 0 25px rgba(153, 69, 255, 0.3));
-            transition: transform 0.05s ease; -webkit-user-select: none; touch-action: manipulation;
-        }
-        #main-coin:active { transform: scale(0.95) rotate(2deg); }
-        
-        .float-txt {
-            position: absolute; pointer-events: none; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 24px;
-            color: #fff; animation: floatUp 0.8s ease-out forwards; z-index: 99;
-        }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px); } }
-        
-        .actions-wrapper { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 5px; flex-shrink: 0; }
-        .btn-premium {
-            width: 100%; padding: 12px; border-radius: 12px; border: none;
-            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px;
-            display: flex; justify-content: space-between; align-items: center; cursor: pointer; min-height: 48px;
-        }
-        .btn-task { background: linear-gradient(90deg, #1c1c24, #252530); border: 1px solid rgba(255,255,255,0.1); color: white; }
-        .btn-telegram { background: linear-gradient(90deg, #0088cc, #00aaff); color: white; justify-content: center; gap: 10px; font-size: 15px; }
+        .stat-label { font-size: 12px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-family: 'Chakra Petch', sans-serif; font-size: 24px; font-weight: bold; margin-top: 5px; color: white; }
 
-        /* --- DOCK --- */
-        .dock {
-            flex-shrink: 0; width: 100%; background: #111; border-top: 2px solid #222;
-            padding: 10px 0; padding-bottom: max(10px, env(safe-area-inset-bottom)); z-index: 40;
+        /* --- TABLE AREA --- */
+        .table-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .search-bar {
+            flex: 1; padding: 10px; background: var(--card-bg); border: var(--border); color: white; border-radius: 6px;
         }
-        .dock-header { padding: 0 15px 6px; font-size: 11px; color: #888; text-transform: uppercase; font-weight: 700; }
-        .cards-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 15px; scrollbar-width: none; height: 120px; align-items: center; }
-        .cards-scroll::-webkit-scrollbar { display: none; }
         
-        .upgrade-card {
-            flex: 0 0 auto; width: 85px; height: 110px; background: #1e1e1e;
-            border: 1px solid #333; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+        .table-scroll {
+            overflow-x: auto; background: var(--card-bg); border-radius: 10px; border: var(--border);
         }
-        .upgrade-card.disabled { opacity: 0.5; filter: grayscale(1); }
-        .upgrade-card.affordable { border-color: var(--gold-primary); box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
-        .upgrade-card.maxed { border-color: #ff4d4d; opacity: 0.8; }
-        .c-icon { font-size: 24px; margin-bottom: 4px; }
-        .c-name { font-size: 10px; font-weight: 700; color: #fff; margin-bottom: 3px; text-align: center; width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .c-cost { font-size: 10px; color: var(--gold-primary); font-family: 'Chakra Petch', sans-serif; }
-        .c-lvl { position: absolute; top: 4px; right: 4px; font-size: 8px; background: #333; color: #fff; padding: 1px 4px; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 12px; background: #1a1a1a; color: var(--text-gray); font-size: 12px; text-transform: uppercase; position: sticky; top: 0; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: middle; }
+        tr:hover { background: #151515; }
+        
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .avatar-mini { width: 30px; height: 30px; background: var(--gold-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; font-size: 14px; font-weight: bold; }
+        
+        .uid-pill { 
+            font-family: monospace; background: #222; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; border: 1px solid #333;
+        }
+        .uid-pill:active { background: var(--gold-primary); color: #000; }
 
-        /* --- MODALS --- */
-        .modal-wrap {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); z-index: 1000;
-            display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.2s; padding: 20px;
-        }
-        .modal-wrap.visible { display: flex; opacity: 1; }
-        .modal-panel {
-            background: #121212; width: 100%; max-width: 360px; border-radius: 24px;
-            border: 1px solid #333; padding: 20px; text-align: center; position: relative;
-        }
-        .modal-title { font-family: 'Chakra Petch', sans-serif; font-size: 22px; color: white; margin-bottom: 15px; text-transform: uppercase; }
-        .modal-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #666; font-size: 24px; padding: 5px; cursor: pointer; }
-        .input-box { width: 100%; background: #222; border: 1px solid #333; color: white; padding: 12px; border-radius: 12px; margin-bottom: 10px; text-align: center; font-size: 15px; }
-        .btn-action {
-            width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 800;
-            background: var(--gold-primary); color: #000; margin-top: 8px; cursor: pointer;
-        }
-        .btn-action:disabled { background: #333; color: #555; cursor: not-allowed; }
+        /* ACTIONS */
+        .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; font-weight: bold; }
+        .btn-edit { background: #222; color: var(--gold-primary); border: 1px solid var(--gold-primary); }
+        .btn-ban { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid var(--danger); }
         
-        /* LOGIN MODAL SPECIAL */
-        .login-btn-google { background: white; color: black; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        /* TASK FORM */
+        .task-create-box {
+            background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px dashed #444; margin-bottom: 20px;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        @media(max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
 
-        /* WALLET STYLES */
-        .wallet-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
-        .stat-box { background: #1a1a1a; padding: 12px 8px; border-radius: 12px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; }
-        .stat-label { font-size: 9px; color: #777; letter-spacing: 1px; margin-bottom: 4px; }
-        .stat-val { font-family: 'Chakra Petch', sans-serif; font-size: 16px; font-weight: 700; }
-        .text-gold { color: var(--gold-primary); }
-        .text-purple { color: var(--purple-accent); }
-        .withdraw-bar-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; margin: 5px 0 15px 0; overflow: hidden;}
-        .withdraw-bar-fill { height: 100%; background: var(--purple-accent); width: 0%; transition: width 0.3s;}
-        
-        .task-item { background: #1a1a1a; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #222; }
-        
-        /* INTERNET ERROR MODAL */
-        #modal-error .modal-panel { border-color: var(--danger); }
-        #modal-error .modal-title { color: var(--danger); }
+        /* MODAL */
+        #edit-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: #111; padding: 20px; width: 90%; max-width: 350px; border-radius: 12px; border: 1px solid #333;
+        }
+        .modal-label { display: block; margin-top: 10px; font-size: 12px; color: #888; }
+
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="profile-section">
-            <div class="avatar" id="user-avatar">👤</div>
-            <div class="user-info">
-                <div class="u-name" id="display-name">Guest</div>
-                <div class="u-users"><div class="live-dot"></div> <span id="user-count">...</span> Players</div>
-            </div>
-            <button id="btn-edit-name" style="background:none; border:none; color:#666; margin-left:5px; padding:5px;">✎</button>
-        </div>
-        <div class="header-icons">
-            <button class="h-btn" id="btn-leaderboard">🏆</button>
-            <button id="btn-wallet" title="Open Wallet">
-                <span style="font-size:16px;">💰</span>
-                <span>WALLET</span>
-            </button>
-            <button class="h-btn" id="btn-logout" style="color:var(--gold-secondary); display:none;">✕</button>
-        </div>
-    </header>
-    
-    <main id="game-stage">
-        <!-- Placeholder for standard Banner Ad (if any) -->
-        <div style="width:320px; height:50px; background:rgba(255,255,255,0.02); margin-bottom:10px; display:flex; justify-content:center; align-items:center; font-size:10px; color:#333; border-radius:6px;">
-            AD SPACE
-        </div>
-        
-        <div class="counter-box">
-            <div class="main-balance">
-                <img src="https://cdn-icons-png.flaticon.com/512/217/217853.png" class="coin-img-small" alt="Coin">
-                <span id="coin-counter">0</span>
-            </div>
-            <div class="cps-pill" id="cps-counter">0 / sec</div>
-        </div>
-        
-        <div class="level-hub">
-            <div class="lvl-header"><span id="lvl-txt">Level 1</span><span id="lvl-xp">0%</span></div>
-            <div class="progress-container"><div class="progress-bar" id="xp-bar"></div></div>
-        </div>
-        
-        <div class="clicker-stage">
-            <svg id="main-coin" viewBox="0 0 100 100">
-                <defs>
-                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#9945FF;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#14F195;stop-opacity:1" />
-                    </linearGradient>
-                    <filter id="glow"><feGaussianBlur stdDeviation="4" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                </defs>
-                <circle cx="50" cy="50" r="45" fill="#151515" stroke="url(#grad1)" stroke-width="3" filter="url(#glow)"/>
-                <circle cx="50" cy="50" r="38" fill="url(#grad1)" opacity="0.1"/>
-                <text x="50" y="62" font-family="Chakra Petch" font-weight="bold" font-size="38" text-anchor="middle" fill="url(#grad1)">SOL</text>
-            </svg>
-        </div>
-        
-        <div class="actions-wrapper">
-            <button class="btn-premium btn-task" id="btn-bonus">
-                <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                    <span style="color:var(--gold-primary); font-size:11px;">AD BOOSTER</span>
-                    <span>Click for +200 Coins</span>
-                </div>
-                <div style="background:var(--gold-primary); color:black; padding:5px 10px; border-radius:8px; font-size:11px;">WATCH</div>
-            </button>
-            <button class="btn-premium btn-telegram" id="btn-telegram"><span>✈️</span> Join Telegram Channel</button>
-        </div>
-    </main>
-    
-    <div class="dock">
-        <div class="dock-header">Mining Equipment</div>
-        <div class="cards-scroll" id="upgrade-list"></div>
-    </div>
-    
-    <!-- MODALS -->
-    
-    <!-- LOGIN MODAL -->
-    <div id="modal-login" class="modal-wrap visible">
-        <div class="modal-panel">
-            <div class="modal-title">Welcome Tycoon</div>
-            <p style="color:#888; margin-bottom:20px;">Sign in to save progress securely.</p>
-            
-            <button id="btn-google-login" class="btn-action login-btn-google">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20">
-                <span>Sign in with Google</span>
-            </button>
-            
-            <div id="login-status" style="margin-top:10px; font-size:12px; color:#666;"></div>
-        </div>
-    </div>
-    
-    <!-- INTERNET ERROR MODAL -->
-    <div id="modal-error" class="modal-wrap" style="z-index:2000;">
-        <div class="modal-panel">
-            <div style="font-size:40px; margin-bottom:10px;">📡</div>
-            <div class="modal-title">Connection Lost</div>
-            <p style="color:#ccc; font-size:14px;">Please check your internet connection to continue mining coins.</p>
+    <!-- LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="color:var(--gold-primary); margin-bottom:10px;">ADMIN ACCESS</h2>
+            <input type="password" id="admin-pass" class="admin-inp" placeholder="Enter Password">
+            <button onclick="checkAdmin()" class="refresh-btn" style="width:100%; background:var(--gold-primary); color:black; font-weight:bold;">LOGIN</button>
+            <p id="login-err" style="color:red; font-size:12px; margin-top:5px;"></p>
         </div>
     </div>
 
-    <!-- WALLET MODAL -->
-    <div id="modal-wallet" class="modal-wrap">
-        <div class="modal-panel">
-            <button class="modal-close" onclick="ui.close('modal-wallet')">&times;</button>
-            <div class="modal-title">My Wallet</div>
-            <div class="wallet-stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">COLLECTED COINS</div>
-                    <div class="stat-val text-gold">
-                        <span id="wallet-coins-display">0</span>
-                    </div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">SOL BALANCE</div>
-                    <div id="wallet-balance" class="stat-val text-purple">0.00 SOL</div>
-                </div>
+    <header>
+        <div class="brand">Tycoon Dashboard</div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('users')" id="tab-users">Users</button>
+            <button class="tab-btn" onclick="switchTab('tasks')" id="tab-tasks">Task System</button>
+        </div>
+        <button class="refresh-btn" onclick="refreshAll()">🔄 Refresh</button>
+    </header>
+
+    <!-- USER MANAGEMENT VIEW -->
+    <div id="view-users" class="view-section active">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="stat-users">0</div>
             </div>
-            <div style="text-align:left; font-size:10px; color:#666; margin-bottom:5px; text-transform:uppercase;">Swap Coins to SOL (Rate: 5000:1)</div>
-            <input type="number" id="inp-exchange" class="input-box" placeholder="Amount to swap">
-            <button id="btn-swap" class="btn-action">SWAP NOW</button>
-            <div style="margin: 20px 0; border-top:1px solid #333;"></div>
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-bottom:2px;">
-                <span>WITHDRAW PROGRESS</span>
-                <span id="withdraw-limit">0 / 50 SOL</span>
+            <div class="stat-card">
+                <div class="stat-label">Coins Circulating</div>
+                <div class="stat-value" style="color:var(--gold-primary)" id="stat-coins">0</div>
             </div>
-            <div class="withdraw-bar-bg"><div id="withdraw-bar" class="withdraw-bar-fill"></div></div>
-            <input type="text" id="inp-addr" class="input-box" placeholder="Paste Solana Address" disabled>
-            <button id="btn-withdraw" class="btn-action" disabled style="background:#222; color:#555;">WITHDRAW TO WALLET</button>
+            <div class="stat-card">
+                <div class="stat-label">Pending SOL</div>
+                <div class="stat-value" style="color:#9945FF" id="stat-sol">0.00</div>
+            </div>
+        </div>
+
+        <div class="table-controls">
+            <input type="text" id="search-inp" class="search-bar" placeholder="Search by Name or ID..." onkeyup="filterTable()">
+        </div>
+        
+        <div class="table-scroll">
+            <table id="user-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>User ID (UID)</th>
+                        <th>Coins</th>
+                        <th>SOL Balance</th>
+                        <th>Level</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
         </div>
     </div>
-    
-    <!-- NAME MODAL -->
-    <div id="modal-name" class="modal-wrap">
-        <div class="modal-panel">
-            <button class="modal-close" onclick="ui.close('modal-name')">&times;</button>
-            <div class="modal-title">Identity</div>
-            <input type="text" id="inp-name" class="input-box" placeholder="New Username" maxlength="12">
-            <div id="name-error" class="error-msg"></div>
-            <button id="btn-save-name" class="btn-action">Update</button>
+
+    <!-- TASK SYSTEM VIEW -->
+    <div id="view-tasks" class="view-section">
+        <h3 style="margin-bottom:15px; color:var(--gold-primary)">Create New Task</h3>
+        <div class="task-create-box">
+            <div class="form-grid">
+                <div>
+                    <label class="modal-label">Task Description</label>
+                    <input type="text" id="new-task-txt" class="admin-inp" placeholder="e.g. Join Telegram">
+                </div>
+                <div>
+                    <label class="modal-label">Reward (Coins)</label>
+                    <input type="number" id="new-task-rwd" class="admin-inp" placeholder="5000">
+                </div>
+                <div>
+                    <label class="modal-label">Link URL</label>
+                    <input type="text" id="new-task-url" class="admin-inp" placeholder="https://...">
+                </div>
+                <button onclick="addTask()" class="refresh-btn" style="background:var(--success); color:black; font-weight:bold; height:42px;">+ ADD TASK</button>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom:15px; color:white;">Active Tasks</h3>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Reward</th>
+                        <th>Link</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="task-body"></tbody>
+            </table>
         </div>
     </div>
-    
-    <!-- TASKS MODAL -->
-    <div id="modal-tasks" class="modal-wrap">
-        <div class="modal-panel">
-            <button class="modal-close" onclick="ui.close('modal-tasks')">&times;</button>
-            <div class="modal-title">Missions</div>
-            <div id="tasks-container" style="max-height:300px; overflow-y:auto; scrollbar-width:none;"></div>
-        </div>
-    </div>
-   
-    <!-- VERIFY MODAL -->
-    <div id="modal-verify" class="modal-wrap">
-        <div class="modal-panel">
-            <button class="modal-close" onclick="ui.close('modal-verify')">&times;</button>
-            <div class="modal-title" style="color:var(--gold-secondary)">Security</div>
-            <div style="font-size:40px; margin:10px;">🛡️</div>
-            <p style="color:#aaa; margin-bottom:20px;">Verify you are human to withdraw.</p>
-            <button id="btn-verify-go" class="btn-action">VERIFY NOW</button>
+
+    <!-- EDIT USER MODAL -->
+    <div id="edit-modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:15px;">Edit User</h3>
+            <input type="hidden" id="edit-uid">
+            
+            <label class="modal-label">Username</label>
+            <input type="text" id="edit-name" class="admin-inp">
+
+            <label class="modal-label">Coins</label>
+            <input type="number" id="edit-coins" class="admin-inp">
+            
+            <label class="modal-label">SOL Balance</label>
+            <input type="number" id="edit-sol" class="admin-inp" step="0.0001">
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="saveUserEdit()" class="refresh-btn" style="flex:1; background:var(--success); color:black; border:none;">SAVE</button>
+                <button onclick="document.getElementById('edit-modal').style.display='none'" class="refresh-btn" style="flex:1;">CANCEL</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
+        // CONFIG
         const firebaseConfig = { apiKey: "AIzaSyB5gIPpuzMJG_Ns59vzG8kITNlcf_k1guw", authDomain: "japear-c00aa.firebaseapp.com", projectId: "japear-c00aa", storageBucket: "japear-c00aa.firebasestorage.app", messagingSenderId: "624280269067", appId: "1:624280269067:web:440dc99a3b9710a6eef20e", databaseURL: "https://japear-c00aa-default-rtdb.firebaseio.com/" };
         try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error(e); }
-        const auth = firebase.auth();
         const db = firebase.database();
-        const provider = new firebase.auth.GoogleAuthProvider();
 
-        // ** MONETAG AD LINK (Interstitial/Direct) **
-        // Replace this with your exact Monetag Direct Link if different
-        const MONETAG_DIRECT_LINK = "https://www.highperformanceformat.com/8ac6c3bc3e229180ae56667165f1c7e5/invoke.js"; 
-        // For button click, we usually use a Direct Link URL (not the js invoke). 
-        // Assuming you have a Direct Link URL like 'https://thubordag.com/...' use that below.
-        // If you only have the Script, we'll open a window. 
-        const AD_URL = "https://forwardtrk.com/1820450"; // Placeholder: Replace with your actual Monetag Direct Link URL
+        let allUsers = [];
+        let allTasks = [];
 
-        // --- 2. GAME STATE ---
-        let user = null;
-        let gameLoop = null;
-        let saveLoop = null;
-        let isOffline = false;
-        let idleTime = 0;
-        let gameState = { coins: 0, sol: 0, clickPwr: 1, cps: 0, xp: 0, name: '', tasks: {} };
-        let taskData = []; // Will load from DB
-        
-        const upgrades = [
-            { id: 'u1', name: 'Rusty GPU', cost: 50, cps: 0.5, icon: '💾', maxLevel: 20 },
-            { id: 'u2', name: 'Power Unit', cost: 300, cps: 4, icon: '🔋', maxLevel: 10 },
-            { id: 'u3', name: 'Server Rack', cost: 1500, cps: 15, icon: '🖥️', maxLevel: 5 },
-            { id: 'u4', name: 'Mining Rig', cost: 9000, cps: 50, icon: '🏗️', maxLevel: 3 },
-            { id: 'u5', name: 'AI Node', cost: 50000, cps: 250, icon: '🤖', maxLevel: 2 }
-        ];
-        upgrades.forEach(u => { u.level = 0; u.currentCost = u.cost; });
-
-        const $ = (id) => document.getElementById(id);
-        const fmt = (num) => {
-            if(num >= 1000000) return (num/1000000).toFixed(2) + 'M';
-            if(num >= 1000) return (num/1000).toFixed(1) + 'k';
-            return Math.floor(num).toLocaleString();
-        };
-        const ui = {
-            open: (id) => { $(id).classList.add('visible'); if(id === 'modal-tasks') renderTasks(); },
-            close: (id) => { $(id).classList.remove('visible'); if(id==='modal-name') $('name-error').innerText=''; }
-        };
-
-        // --- 3. INTERNET & IDLE SYSTEM ---
-        
-        // Internet Check
-        function checkConnection() {
-            if(!navigator.onLine) {
-                isOffline = true;
-                $('modal-error').classList.add('visible');
+        // --- AUTH ---
+        function checkAdmin() {
+            if(document.getElementById('admin-pass').value === 'admin123') {
+                document.getElementById('login-overlay').style.display = 'none';
+                refreshAll();
             } else {
-                isOffline = false;
-                $('modal-error').classList.remove('visible');
-            }
-        }
-        window.addEventListener('online', checkConnection);
-        window.addEventListener('offline', checkConnection);
-        setInterval(checkConnection, 5000); // Double check every 5s
-
-        // Idle Ads System
-        function resetIdleTimer() {
-            idleTime = 0;
-        }
-        document.body.addEventListener('touchstart', resetIdleTimer);
-        document.body.addEventListener('click', resetIdleTimer);
-        document.body.addEventListener('scroll', resetIdleTimer);
-
-        setInterval(() => {
-            if(!user || isOffline) return;
-            idleTime++;
-            // If idle for 45 seconds, trigger ad
-            if(idleTime === 45) {
-                console.log("User Idle - Triggering Ad");
-                window.open(AD_URL, '_blank');
-                // Reset to avoid spamming immediately
-                idleTime = 0; 
-            }
-        }, 1000);
-
-        // --- 4. CORE GAME LOGIC ---
-        function render() {
-            $('coin-counter').innerText = fmt(gameState.coins);
-            $('cps-counter').innerText = fmt(gameState.cps) + '/s';
-            $('display-name').innerText = gameState.name;
-           
-            $('wallet-balance').innerText = gameState.sol.toFixed(4) + ' SOL';
-            $('wallet-coins-display').innerText = fmt(gameState.coins);
-            
-            // Level Calc
-            const currentLevel = Math.floor(Math.sqrt(gameState.xp / 500)) + 1;
-            const xpForCurrent = 500 * Math.pow(currentLevel - 1, 2);
-            const xpForNext = 500 * Math.pow(currentLevel, 2);
-            const progress = ((gameState.xp - xpForCurrent) / (xpForNext - xpForCurrent)) * 100;
-           
-            $('lvl-txt').innerText = `Level ${currentLevel}`;
-            $('lvl-xp').innerText = Math.floor(progress) + '%';
-            $('xp-bar').style.width = Math.min(100, Math.max(0, progress)) + '%';
-           
-            upgrades.forEach(u => {
-                const el = document.querySelector(`[data-uid="${u.id}"]`);
-                if(el) {
-                    const isMaxed = u.level >= u.maxLevel;
-                    if(isMaxed) {
-                        el.querySelector('.c-cost').innerText = "MAX";
-                        el.querySelector('.c-cost').style.color = "#ff4d4d";
-                        el.classList.add('disabled', 'maxed');
-                        el.classList.remove('affordable');
-                    } else {
-                        el.querySelector('.c-cost').innerText = fmt(u.currentCost);
-                        el.querySelector('.c-cost').style.color = "var(--gold-primary)";
-                        el.classList.remove('maxed');
-                        if(gameState.coins >= u.currentCost) { el.classList.remove('disabled'); el.classList.add('affordable'); }
-                        else { el.classList.add('disabled'); el.classList.remove('affordable'); }
-                    }
-                    el.querySelector('.c-lvl').innerText = `${u.level}/${u.maxLevel}`;
-                }
-            });
-
-            const canWithdraw = gameState.sol >= 50;
-            $('withdraw-limit').innerText = `${gameState.sol.toFixed(2)} / 50 SOL`;
-            $('withdraw-bar').style.width = Math.min(100, (gameState.sol / 50) * 100) + '%';
-            $('btn-withdraw').disabled = !canWithdraw; $('inp-addr').disabled = !canWithdraw;
-            if(canWithdraw) { $('btn-withdraw').style.background = 'var(--gold-primary)'; $('btn-withdraw').style.color = 'black'; }
-        }
-
-        function doClick(e) {
-            if(isOffline) return; // No clicking if offline
-            if(e) e.preventDefault();
-            if(!user) { ui.open('modal-login'); return; }
-            
-            let gain = gameState.clickPwr;
-            if(Math.random() < 0.05) gain *= 3; // Critical hit
-            gameState.coins += gain; gameState.xp += gain;
-            
-            // Visuals
-            const px = e.touches ? e.touches[0].clientX : e.clientX;
-            const py = e.touches ? e.touches[0].clientY : e.clientY;
-            const float = document.createElement('div');
-            float.className = 'float-txt'; float.innerText = '+' + Math.floor(gain);
-            float.style.left = (px - 20) + 'px'; float.style.top = (py - 40) + 'px';
-            document.body.appendChild(float);
-            setTimeout(() => float.remove(), 800);
-            if(navigator.vibrate) navigator.vibrate(10);
-            
-            render();
-            resetIdleTimer(); // Activity detected
-        }
-
-        function buyUpgrade(id) {
-            if(isOffline) return;
-            const u = upgrades.find(x => x.id === id);
-            if(u && gameState.coins >= u.currentCost && u.level < u.maxLevel) {
-                gameState.coins -= u.currentCost;
-                u.level++;
-                u.currentCost = Math.floor(u.cost * Math.pow(1.15, u.level));
-                recalc(); render(); save();
+                document.getElementById('login-err').innerText = 'Invalid Password';
             }
         }
 
-        function recalc() {
-            gameState.cps = 0; gameState.clickPwr = 1;
-            upgrades.forEach(u => { gameState.cps += (u.level * u.cps); gameState.clickPwr += (u.level * u.cps * 0.1); });
-        }
-
-        function initDock() {
-            const list = $('upgrade-list'); list.innerHTML = '';
-            const tCard = document.createElement('div'); tCard.className = 'upgrade-card';
-            tCard.style.borderColor = 'var(--gold-primary)';
-            tCard.innerHTML = `<div class="c-icon">📜</div><div class="c-name">Tasks</div>`;
-            tCard.onclick = () => ui.open('modal-tasks');
-            list.appendChild(tCard);
+        // --- TABS ---
+        function switchTab(tab) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            upgrades.forEach(u => {
-                const card = document.createElement('div'); card.className = 'upgrade-card disabled';
-                card.dataset.uid = u.id;
-                card.innerHTML = `<div class="c-lvl">0/${u.maxLevel}</div><div class="c-icon">${u.icon}</div><div class="c-name">${u.name}</div><div class="c-cost">${fmt(u.cost)}</div>`;
-                card.onclick = () => buyUpgrade(u.id);
-                list.appendChild(card);
-            });
+            document.getElementById('view-'+tab).classList.add('active');
+            document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- 5. TASKS (LOAD FROM DB) ---
-        function loadSystemTasks() {
-            db.ref('system_tasks').on('value', (snapshot) => {
-                taskData = [];
-                snapshot.forEach(child => {
-                    const t = child.val();
-                    taskData.push({ id: child.key, txt: t.txt, rwd: t.rwd, url: t.url });
-                });
-            });
-        }
-        
-        function renderTasks() {
-            const c = $('tasks-container'); c.innerHTML = '';
-            if(taskData.length === 0) { c.innerHTML = '<div style="color:#666; font-size:12px;">No active tasks</div>'; return; }
-            taskData.forEach(t => {
-                const done = gameState.tasks[t.id];
-                const div = document.createElement('div'); div.className = 'task-item'; div.style.opacity = done ? 0.5 : 1;
-                div.innerHTML = `<div style="text-align:left;"><div style="font-size:13px; font-weight:bold; color:white;">${t.txt}</div><div style="font-size:11px; color:var(--gold-primary);">+${fmt(t.rwd)} Coins</div></div>${done ? '✅' : `<div style="display:flex; gap:5px;"><button style="padding:5px 10px; border-radius:6px; border:none;" onclick="window.open('${t.url}')">GO</button><button style="padding:5px 10px; border-radius:6px; border:none; background:var(--gold-primary); font-weight:bold;" onclick="claimTask('${t.id}', ${t.rwd})">GET</button></div>`}`;
-                c.appendChild(div);
-            });
-        }
-        window.claimTask = (id, rwd) => {
-            if(!gameState.tasks[id]) {
-                gameState.tasks[id] = true; gameState.coins += rwd; gameState.xp += rwd;
-                renderTasks(); render(); save();
-            }
-        };
-
-        // --- 6. AUTH & SAVE ---
-        function save() {
-            if(!user || isOffline) return; // Don't save if offline
-            const data = { coins: gameState.coins, sol: gameState.sol, xp: gameState.xp, name: gameState.name, tasks: gameState.tasks, upgrades: {} };
-            upgrades.forEach(u => data.upgrades[u.id] = u.level);
-            db.ref('users/'+user.uid).set(data);
+        function refreshAll() {
+            fetchUsers();
+            fetchTasks();
         }
 
-        // Improved Login
-        $('btn-google-login').onclick = () => {
-            $('login-status').innerText = "Connecting to Google...";
-            auth.signInWithPopup(provider)
-            .then((result) => {
-                // Success handled by onAuthStateChanged
-            })
-            .catch((error) => {
-                $('login-status').innerText = "Error: " + error.message;
-                console.error(error);
-            });
-        };
+        // --- USERS LOGIC ---
+        function fetchUsers() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
 
-        auth.onAuthStateChanged(u => {
-            user = u;
-            if(user) {
-                // USER LOGGED IN
-                ui.close('modal-login'); $('btn-logout').style.display = 'flex';
+            db.ref('users').once('value', (snapshot) => {
+                allUsers = [];
+                let totalCoins = 0, totalSol = 0;
                 
-                // Load User Data
-                db.ref('users/'+user.uid).once('value', s => {
-                    const d = s.val() || {};
-                    gameState.coins = d.coins || 0; 
-                    gameState.sol = d.sol || 0;
-                    gameState.xp = d.xp || (d.coins || 0);
-                    gameState.tasks = d.tasks || {};
-                    
-                    if(!d.name) {
-                        const randomName = 'Miner' + Math.floor(1000 + Math.random() * 9000);
-                        gameState.name = randomName;
-                        save(); // First save
-                    } else {
-                        gameState.name = d.name;
-                    }
-                    
-                    if(d.upgrades) upgrades.forEach(u => { 
-                        u.level = d.upgrades[u.id] || 0; 
-                        u.currentCost = Math.floor(u.cost * Math.pow(1.15, u.level)); 
-                    });
-                    
-                    recalc(); render(); loadSystemTasks();
-                    
-                    // Start Loop
-                    if(gameLoop) clearInterval(gameLoop);
-                    gameLoop = setInterval(() => { 
-                        if(gameState.cps > 0 && !isOffline) { 
-                            const tick = gameState.cps / 10; gameState.coins += tick; gameState.xp += tick; render(); 
-                        } 
-                    }, 100);
-                    saveLoop = setInterval(save, 15000);
+                snapshot.forEach(child => {
+                    const d = child.val();
+                    const uObj = { uid: child.key, name: d.name || 'Unknown', coins: d.coins || 0, sol: d.sol || 0, xp: d.xp || 0 };
+                    allUsers.push(uObj);
+                    totalCoins += uObj.coins;
+                    totalSol += uObj.sol;
                 });
-            } else {
-                // NO USER
-                ui.open('modal-login');
-                if(gameLoop) clearInterval(gameLoop);
+
+                allUsers.sort((a, b) => b.coins - a.coins);
+                
+                document.getElementById('stat-users').innerText = allUsers.length;
+                document.getElementById('stat-coins').innerText = fmt(totalCoins);
+                document.getElementById('stat-sol').innerText = totalSol.toFixed(4);
+                renderUserTable(allUsers);
+            });
+        }
+
+        function renderUserTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No users found.</td></tr>'; return; }
+
+            data.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="user-cell">
+                            <div class="avatar-mini">${u.name.substring(0,1).toUpperCase()}</div>
+                            <strong>${u.name}</strong>
+                        </div>
+                    </td>
+                    <td><span class="uid-pill" onclick="copyToClip('${u.uid}')" title="Click to Copy">${u.uid}</span></td>
+                    <td style="color:var(--gold-primary)">${fmt(u.coins)}</td>
+                    <td style="color:#9945FF">${u.sol.toFixed(4)}</td>
+                    <td>${Math.floor(Math.sqrt(u.xp/500))+1}</td>
+                    <td>
+                        <button class="btn-sm btn-edit" onclick="openEdit('${u.uid}')">EDIT</button>
+                        <button class="btn-sm btn-ban" onclick="deleteUser('${u.uid}')">DEL</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- TASKS LOGIC ---
+        function fetchTasks() {
+            const tbody = document.getElementById('task-body');
+            db.ref('system_tasks').once('value', (s) => {
+                tbody.innerHTML = '';
+                if(!s.exists()) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No tasks active.</td></tr>'; return; }
+                
+                s.forEach(child => {
+                    const t = child.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${t.txt}</td>
+                        <td style="color:var(--gold-primary)">+${fmt(t.rwd)}</td>
+                        <td><a href="${t.url}" target="_blank" style="color:#aaa;">Link ↗</a></td>
+                        <td><button class="btn-sm btn-ban" onclick="deleteTask('${child.key}')">REMOVE</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function addTask() {
+            const txt = document.getElementById('new-task-txt').value;
+            const rwd = parseInt(document.getElementById('new-task-rwd').value);
+            const url = document.getElementById('new-task-url').value;
+
+            if(!txt || !rwd || !url) return alert("Fill all fields");
+
+            db.ref('system_tasks').push({ txt, rwd, url })
+            .then(() => {
+                alert("Task Live!");
+                document.getElementById('new-task-txt').value = '';
+                document.getElementById('new-task-rwd').value = '';
+                document.getElementById('new-task-url').value = '';
+                fetchTasks();
+            });
+        }
+
+        function deleteTask(key) {
+            if(confirm("Delete this task?")) {
+                db.ref('system_tasks/'+key).remove().then(fetchTasks);
             }
-        });
+        }
 
-        // --- 7. GLOBAL COUNTER (Users Joined) ---
-        // Simple approximate counter using numChildren (good for small/medium apps)
-        db.ref('users').on('value', snap => {
-            $('user-count').innerText = fmt(snap.numChildren());
-        });
+        // --- HELPERS & ACTIONS ---
+        function copyToClip(text) {
+            navigator.clipboard.writeText(text).then(() => alert("UID Copied: " + text));
+        }
 
-        // --- 8. EVENTS ---
-        const mc = $('main-coin');
-        mc.addEventListener('touchstart', doClick, {passive:false});
-        mc.addEventListener('mousedown', doClick);
-        
-        $('btn-logout').onclick = () => { save(); auth.signOut(); location.reload(); };
-        $('btn-wallet').onclick = () => ui.open('modal-wallet');
-        
-        // Swap Logic
-        $('btn-swap').onclick = () => {
-            const v = parseFloat($('inp-exchange').value);
-            if(v > 0 && v <= gameState.coins) { 
-                gameState.coins -= v; gameState.sol += (v / 5000); 
-                $('inp-exchange').value = ''; save(); render(); 
+        function openEdit(uid) {
+            const u = allUsers.find(x => x.uid === uid);
+            if(!u) return;
+            document.getElementById('edit-uid').value = uid;
+            document.getElementById('edit-name').value = u.name;
+            document.getElementById('edit-coins').value = Math.floor(u.coins);
+            document.getElementById('edit-sol').value = u.sol;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function saveUserEdit() {
+            const uid = document.getElementById('edit-uid').value;
+            db.ref('users/' + uid).update({
+                name: document.getElementById('edit-name').value,
+                coins: parseFloat(document.getElementById('edit-coins').value),
+                sol: parseFloat(document.getElementById('edit-sol').value)
+            }).then(() => {
+                document.getElementById('edit-modal').style.display = 'none';
+                fetchUsers();
+            });
+        }
+
+        function deleteUser(uid) {
+            if(confirm("Permanently delete user?")) {
+                db.ref('users/' + uid).remove().then(fetchUsers);
             }
-        };
-        
-        $('btn-withdraw').onclick = () => { if($('inp-addr').value.length > 10) { ui.close('modal-wallet'); ui.open('modal-verify'); } else { alert("Address invalid"); } };
-        $('btn-verify-go').onclick = () => window.open('https://forwardtrk.com/1820450', '_blank');
-        
-        // ** UPDATE: BONUS BUTTON AD LOGIC **
-        $('btn-bonus').onclick = () => { 
-            // 1. Show Ad
-            window.open(AD_URL, '_blank');
-            // 2. Give Reward (simulate "watched")
-            $('btn-bonus').style.opacity = '0.5';
-            $('btn-bonus').disabled = true;
-            setTimeout(() => {
-                if(user) {
-                    gameState.coins += 200;
-                    gameState.xp += 200;
-                    render(); save();
-                    alert("Bonus +200 Coins!");
-                }
-                $('btn-bonus').style.opacity = '1';
-                $('btn-bonus').disabled = false;
-            }, 3000); // 3 sec delay to simulate return
-        };
-        
-        $('btn-telegram').onclick = () => window.open('https://t.me/your_telegram_channel', '_blank');
-        $('btn-edit-name').onclick = () => ui.open('modal-name');
-        $('btn-leaderboard').onclick = () => location.href = 'dashboard.html';
+        }
 
-        // --- NAME UPDATE ---
-        $('btn-save-name').onclick = async () => {
-            const newName = $('inp-name').value.trim();
-            const err = $('name-error');
-            err.innerText = '';
-            if(newName.length < 3 || newName.length > 12) { err.innerText = 'Name must be 3-12 chars'; return; }
-            if(!/^[a-zA-Z0-9_]+$/.test(newName)) { err.innerText = 'Alphanumeric only'; return; }
-            if(newName === gameState.name) { ui.close('modal-name'); return; }
-            
-            $('btn-save-name').innerText = 'Checking...';
-            try {
-                const snapshot = await db.ref('users').orderByChild('name').equalTo(newName).once('value');
-                if(snapshot.exists()) {
-                    err.innerText = 'Name already taken!';
-                } else {
-                    gameState.name = newName;
-                    save(); render();
-                    ui.close('modal-name');
-                }
-            } catch(e) { console.error(e); err.innerText = 'Error'; }
-            $('btn-save-name').innerText = 'Update';
-        };
+        function filterTable() {
+            const term = document.getElementById('search-inp').value.toLowerCase();
+            const filtered = allUsers.filter(u => u.name.toLowerCase().includes(term) || u.uid.toLowerCase().includes(term));
+            renderUserTable(filtered);
+        }
 
-        checkConnection();
-        initDock();
+        const fmt = (n) => n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'k' : n.toLocaleString();
     </script>
 </body>
 </html>
