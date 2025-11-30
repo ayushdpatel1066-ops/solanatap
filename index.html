@@ -641,11 +641,33 @@
             }
         }
 
-        window.buyBot=()=>{ if(user.autoMiner>=10)return; if(user.score>=1000){user.score-=1000;user.autoMiner++;saveUser();updateUI();}else{tg.showAlert("Need 1000 Coin");}}
-        
-        function autoMine(){
-            if(isIdle) return;
-            if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}
+     // MODIFIED: Show Ad BEFORE buying the Auto-Bot
+        window.buyBot = () => {
+            // 1. Check if Max Level reached
+            if (user.autoMiner >= 10) {
+                tg.showAlert("Max Level Reached!");
+                return;
+            }
+
+            // 2. Check if user has enough coins (1000)
+            if (user.score >= 1000) {
+                
+                // 3. Trigger the Rewarded Interstitial Ad
+                showAd('rewarded').then(() => {
+                    // 4. Only deduct coins and upgrade IF ad is watched successfully
+                    user.score -= 1000;
+                    user.autoMiner++;
+                    saveUser();
+                    updateUI();
+                    tg.showAlert("Success! Auto-Bot Upgraded.");
+                }).catch(() => {
+                    // Optional: Handle if ad fails to load
+                    tg.showAlert("Ad failed. Try again.");
+                });
+
+            } else {
+                tg.showAlert("Need 1000 Coins to upgrade!");
+            }
         }
         
         function renderAds(){ 
