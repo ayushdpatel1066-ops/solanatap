@@ -1,1 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Offers - Solana Miner</title>
+    
+    <!-- FONTS & ICONS -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- SDKS -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --sol-green: #14F195;
+            --sol-purple: #9945FF;
+            --bg-dark: #000000;
+            --glass: rgba(20, 20, 20, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Outfit', sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 0%, rgba(153, 69, 255, 0.2) 0%, transparent 60%);
+            color: white;
+            font-family: var(--font-main);
+            margin: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px; display: flex; align-items: center; gap: 15px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer;
+        }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 20px;
+        }
+
+        .offer-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex; align-items: center; gap: 15px;
+        }
+
+        .offer-icon {
+            width: 50px; height: 50px; border-radius: 12px; object-fit: cover;
+        }
+
+        .offer-info { flex: 1; }
+        .offer-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+        .offer-reward { color: var(--sol-green); font-weight: 900; font-size: 14px; }
+
+        .claim-btn {
+            background: white; color: black; border: none;
+            padding: 8px 16px; border-radius: 20px;
+            font-weight: bold; font-size: 12px; cursor: pointer;
+        }
+        .claim-btn:active { transform: scale(0.95); }
+
+        .loader { text-align: center; margin-top: 50px; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-arrow-left-line"></i></button>
+        <h2 style="margin:0; font-size: 20px;">Special Offers</h2>
+    </div>
+
+    <div class="content" id="offer-list">
+        <!-- Offers injected here -->
+        <div class="loader">Loading Offers...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
+            authDomain: "solanacoin-6d9a8.firebaseapp.com",
+            databaseURL: "https://solanacoin-6d9a8-default-rtdb.firebaseio.com",
+            projectId: "solanacoin-6d9a8",
+            storageBucket: "solanacoin-6d9a8.firebasestorage.app",
+            messagingSenderId: "269025348490",
+            appId: "1:269025348490:web:87c95514a1d86485169673",
+            measurementId: "G-00X84VW123"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let userId = localStorage.getItem('local_sim_id'); // Get ID saved from index.html
+        let userScore = 0;
+
+        // Simulated Offers
+        const OFFERS = [
+            { id: 1, title: "Play Lords Mobile", reward: 5000, icon: "https://cdn-icons-png.flaticon.com/512/3408/3408506.png" },
+            { id: 2, title: "Complete Survey", reward: 2500, icon: "https://cdn-icons-png.flaticon.com/512/2910/2910768.png" },
+            { id: 3, title: "Install Alibaba", reward: 1200, icon: "https://cdn-icons-png.flaticon.com/512/888/888839.png" },
+            { id: 4, title: "Register Binance", reward: 10000, icon: "https://cdn-icons-png.flaticon.com/512/11421/11421337.png" }
+        ];
+
+        async function init() {
+            if(!userId) {
+                alert("Please go back to Main Menu first.");
+                return;
+            }
+
+            // Load User Score
+            try {
+                const s = await get(ref(db, 'sol_users/' + userId));
+                if(s.exists()) {
+                    userScore = s.val().score || 0;
+                }
+            } catch(e) { console.log(e); }
+
+            renderOffers();
+        }
+
+        function renderOffers() {
+            const list = document.getElementById('offer-list');
+            list.innerHTML = '';
+            
+            OFFERS.forEach(offer => {
+                list.innerHTML += `
+                <div class="offer-card">
+                    <img src="${offer.icon}" class="offer-icon">
+                    <div class="offer-info">
+                        <div class="offer-title">${offer.title}</div>
+                        <div class="offer-reward">+${offer.reward.toLocaleString()} Coins</div>
+                    </div>
+                    <button class="claim-btn" onclick="startOffer(${offer.reward}, '${offer.title}')">GET</button>
+                </div>`;
+            });
+        }
+
+        window.startOffer = (reward, title) => {
+            // Simulate Offer Wall Logic
+            tg.showConfirm(`Start offer "${title}"?`, (confirmed) => {
+                if(confirmed) {
+                    // In a real app, this would open an Offerwall link
+                    // Here we simulate completion after 3 seconds
+                    tg.showAlert("Complete the task in the browser...");
+                    
+                    setTimeout(async () => {
+                        if(confirm(`Did you complete "${title}"?`)) {
+                            userScore += reward;
+                            await update(ref(db, 'sol_users/' + userId), { score: userScore });
+                            tg.showAlert(`Verified! +${reward} Coins added.`);
+                        }
+                    }, 3000);
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
