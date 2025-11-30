@@ -34,24 +34,55 @@
             overflow: hidden;
         }
 
+        /* HEADER */
         .header {
-            padding: 20px; display: flex; align-items: center; gap: 15px;
+            padding: 20px; display: flex; align-items: center; justify-content: space-between;
             border-bottom: 1px solid var(--border);
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
         }
-
         .back-btn {
             background: rgba(255,255,255,0.1); border: none; color: white;
             width: 40px; height: 40px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 20px; cursor: pointer;
         }
-
-        .content {
-            flex: 1; overflow-y: auto; padding: 20px;
+        .balance-box {
+            background: rgba(20, 241, 149, 0.1); border: 1px solid var(--sol-green);
+            padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px;
+            color: var(--sol-green); display: flex; align-items: center; gap: 5px;
         }
 
+        .content { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* --- SPECIAL BANNER --- */
+        .banner-card {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-radius: 20px; padding: 20px; margin-bottom: 25px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            position: relative; overflow: hidden; border: 2px solid #fff;
+            cursor: pointer; transition: transform 0.1s;
+        }
+        .banner-card:active { transform: scale(0.98); }
+        
+        .banner-text h3 { margin: 0; color: black; font-weight: 900; font-size: 20px; }
+        .banner-text p { margin: 5px 0 0; color: #333; font-size: 12px; font-weight: bold; }
+        .banner-tag {
+            background: black; color: white; padding: 4px 8px; border-radius: 5px;
+            font-size: 10px; font-weight: bold; display: inline-block; margin-bottom: 5px;
+        }
+
+        .gift-box {
+            font-size: 50px; color: #d63031;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* --- OFFER LIST --- */
         .offer-card {
             background: var(--glass);
             border: 1px solid var(--border);
@@ -60,15 +91,10 @@
             margin-bottom: 15px;
             display: flex; align-items: center; gap: 15px;
         }
-
-        .offer-icon {
-            width: 50px; height: 50px; border-radius: 12px; object-fit: cover;
-        }
-
+        .offer-icon { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; }
         .offer-info { flex: 1; }
         .offer-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
         .offer-reward { color: var(--sol-green); font-weight: 900; font-size: 14px; }
-
         .claim-btn {
             background: white; color: black; border: none;
             padding: 8px 16px; border-radius: 20px;
@@ -83,18 +109,29 @@
 
     <div class="header">
         <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-arrow-left-line"></i></button>
-        <h2 style="margin:0; font-size: 20px;">Special Offers</h2>
+        <div class="balance-box">
+            <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="14">
+            <span id="user-balance">0</span>
+        </div>
     </div>
 
-    <div class="content" id="offer-list">
-        <!-- Offers injected here -->
-        <div class="loader">Loading Offers...</div>
+    <div class="content">
+        <!-- SPECIAL BANNER (The Trap) -->
+        <div id="special-banner"></div>
+
+        <h3 style="margin: 10px 0 15px; font-size: 16px; color: #aaa;">More Tasks</h3>
+        
+        <!-- REGULAR OFFERS -->
+        <div id="offer-list">
+            <div class="loader">Loading Offers...</div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, get, update, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // YOUR CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
             authDomain: "solanacoin-6d9a8.firebaseapp.com",
@@ -111,39 +148,92 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        let userId = localStorage.getItem('local_sim_id'); // Get ID saved from index.html
+        let userId = localStorage.getItem('local_sim_id');
         let userScore = 0;
 
-        // Simulated Offers
-        const OFFERS = [
-            { id: 1, title: "Play Lords Mobile", reward: 5000, icon: "https://cdn-icons-png.flaticon.com/512/3408/3408506.png" },
-            { id: 2, title: "Complete Survey", reward: 2500, icon: "https://cdn-icons-png.flaticon.com/512/2910/2910768.png" },
-            { id: 3, title: "Install Alibaba", reward: 1200, icon: "https://cdn-icons-png.flaticon.com/512/888/888839.png" },
-            { id: 4, title: "Register Binance", reward: 10000, icon: "https://cdn-icons-png.flaticon.com/512/11421/11421337.png" }
-        ];
+        // --- DEFAULT DB DATA (If empty) ---
+        const DEFAULT_OFFERS_DATA = {
+            special: {
+                title: "PREMIUM GIFT",
+                desc: "Join VIP Channel",
+                reward: 15000,
+                link: "https://t.me/soltapcoin", // CHANGE THIS LINK IN DB
+                icon: "ri-gift-2-fill"
+            },
+            list: {
+                o1: { title: "Play Lords Mobile", reward: 5000, icon: "https://cdn-icons-png.flaticon.com/512/3408/3408506.png", link: "https://google.com" },
+                o2: { title: "Register Binance", reward: 8000, icon: "https://cdn-icons-png.flaticon.com/512/11421/11421337.png", link: "https://binance.com" },
+                o3: { title: "Install Alibaba", reward: 1200, icon: "https://cdn-icons-png.flaticon.com/512/888/888839.png", link: "https://alibaba.com" }
+            }
+        };
 
         async function init() {
             if(!userId) {
-                alert("Please go back to Main Menu first.");
-                return;
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    userId = tg.initDataUnsafe.user.id.toString();
+                } else {
+                    alert("Please go back to Main Menu first.");
+                    return;
+                }
             }
 
-            // Load User Score
+            // 1. Get User Score
             try {
                 const s = await get(ref(db, 'sol_users/' + userId));
                 if(s.exists()) {
                     userScore = s.val().score || 0;
+                    document.getElementById('user-balance').innerText = Math.floor(userScore).toLocaleString();
                 }
             } catch(e) { console.log(e); }
 
-            renderOffers();
+            // 2. Initialize DB if empty
+            await checkAndInitDB();
+
+            // 3. Render
+            loadOffersFromDB();
         }
 
-        function renderOffers() {
+        async function checkAndInitDB() {
+            const s = await get(ref(db, 'offers_config'));
+            if(!s.exists()) {
+                await set(ref(db, 'offers_config'), DEFAULT_OFFERS_DATA);
+            }
+        }
+
+        async function loadOffersFromDB() {
+            const s = await get(ref(db, 'offers_config'));
+            if(s.exists()) {
+                const data = s.val();
+                renderSpecialBanner(data.special);
+                renderList(data.list);
+            }
+        }
+
+        // --- RENDER BANNER (THE TRAP) ---
+        function renderSpecialBanner(data) {
+            const container = document.getElementById('special-banner');
+            container.innerHTML = `
+                <div class="banner-card" onclick="clickTrapBanner('${data.link}')">
+                    <div class="banner-text">
+                        <div class="banner-tag">LIMITED TIME</div>
+                        <h3>${data.title}</h3>
+                        <p>${data.desc}</p>
+                        <div style="background:rgba(0,0,0,0.1); padding:5px; border-radius:5px; margin-top:8px; display:inline-block;">
+                            +${data.reward.toLocaleString()} COINS
+                        </div>
+                    </div>
+                    <i class="${data.icon || 'ri-gift-2-fill'} gift-box"></i>
+                </div>
+            `;
+        }
+
+        // --- RENDER NORMAL LIST ---
+        function renderList(listData) {
             const list = document.getElementById('offer-list');
             list.innerHTML = '';
             
-            OFFERS.forEach(offer => {
+            Object.keys(listData).forEach(key => {
+                const offer = listData[key];
                 list.innerHTML += `
                 <div class="offer-card">
                     <img src="${offer.icon}" class="offer-icon">
@@ -151,26 +241,41 @@
                         <div class="offer-title">${offer.title}</div>
                         <div class="offer-reward">+${offer.reward.toLocaleString()} Coins</div>
                     </div>
-                    <button class="claim-btn" onclick="startOffer(${offer.reward}, '${offer.title}')">GET</button>
+                    <button class="claim-btn" onclick="startOffer(${offer.reward}, '${offer.title}', '${offer.link}')">GET</button>
                 </div>`;
             });
         }
 
-        window.startOffer = (reward, title) => {
-            // Simulate Offer Wall Logic
-            tg.showConfirm(`Start offer "${title}"?`, (confirmed) => {
+        // --- LOGIC: TRAP BANNER (Never Pays) ---
+        window.clickTrapBanner = (url) => {
+            tg.openLink(url);
+            
+            // Show checking animation
+            tg.showAlert("Checking completion...");
+            
+            // Always fail after 4 seconds
+            setTimeout(() => {
+                tg.showAlert("❌ Task Not Completed! Please join the channel to claim.");
+            }, 4000);
+        }
+
+        // --- LOGIC: NORMAL OFFERS (Pays) ---
+        window.startOffer = (reward, title, url) => {
+            tg.showConfirm(`Start "${title}"?`, (confirmed) => {
                 if(confirmed) {
-                    // In a real app, this would open an Offerwall link
-                    // Here we simulate completion after 3 seconds
-                    tg.showAlert("Complete the task in the browser...");
+                    tg.openLink(url);
                     
                     setTimeout(async () => {
                         if(confirm(`Did you complete "${title}"?`)) {
+                            // Add coins
                             userScore += reward;
                             await update(ref(db, 'sol_users/' + userId), { score: userScore });
-                            tg.showAlert(`Verified! +${reward} Coins added.`);
+                            
+                            // Update UI
+                            document.getElementById('user-balance').innerText = Math.floor(userScore).toLocaleString();
+                            tg.showAlert(`✅ Verified! +${reward} Coins added.`);
                         }
-                    }, 3000);
+                    }, 5000); // Wait 5s before asking
                 }
             });
         }
