@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tycoon Admin Dashboard</title>
     
-    <!-- Firebase SDKs (Same as Game) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -53,18 +53,30 @@
         /* --- HEADER --- */
         header {
             background: var(--card-bg); border-bottom: var(--border);
-            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
         }
         .brand { font-family: 'Chakra Petch', sans-serif; font-size: 20px; color: var(--gold-primary); font-weight: bold; }
+        
+        .nav-tabs { display: flex; gap: 10px; }
+        .tab-btn {
+            background: transparent; border: 1px solid #444; color: #888; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;
+        }
+        .tab-btn.active { background: var(--gold-primary); color: #000; border-color: var(--gold-primary); }
+
         .refresh-btn {
             background: #222; border: 1px solid #444; color: white; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s;
         }
         .refresh-btn:hover { background: #333; }
 
+        /* --- LAYOUTS --- */
+        .view-section { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         /* --- STATS GRID --- */
         .stats-container {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px; padding: 20px;
+            gap: 15px; margin-bottom: 20px;
         }
         .stat-card {
             background: var(--card-bg); border: var(--border); padding: 15px; border-radius: 10px;
@@ -73,9 +85,6 @@
         .stat-value { font-family: 'Chakra Petch', sans-serif; font-size: 24px; font-weight: bold; margin-top: 5px; color: white; }
 
         /* --- TABLE AREA --- */
-        .table-wrapper {
-            padding: 0 20px 20px; flex: 1; overflow: hidden; display: flex; flex-direction: column;
-        }
         .table-controls { display: flex; gap: 10px; margin-bottom: 10px; }
         .search-bar {
             flex: 1; padding: 10px; background: var(--card-bg); border: var(--border); color: white; border-radius: 6px;
@@ -84,20 +93,32 @@
         .table-scroll {
             overflow-x: auto; background: var(--card-bg); border-radius: 10px; border: var(--border);
         }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th { text-align: left; padding: 12px; background: #1a1a1a; color: var(--text-gray); font-size: 12px; text-transform: uppercase; position: sticky; top: 0; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: middle; }
         tr:hover { background: #151515; }
         
         .user-cell { display: flex; align-items: center; gap: 10px; }
-        .avatar-mini { width: 24px; height: 24px; background: var(--gold-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; font-size: 12px; font-weight: bold; }
+        .avatar-mini { width: 30px; height: 30px; background: var(--gold-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; font-size: 14px; font-weight: bold; }
         
+        .uid-pill { 
+            font-family: monospace; background: #222; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; border: 1px solid #333;
+        }
+        .uid-pill:active { background: var(--gold-primary); color: #000; }
+
         /* ACTIONS */
-        .btn-sm { padding: 4px 8px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; }
+        .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; font-weight: bold; }
         .btn-edit { background: #222; color: var(--gold-primary); border: 1px solid var(--gold-primary); }
         .btn-ban { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid var(--danger); }
         
-        /* EDIT MODAL */
+        /* TASK FORM */
+        .task-create-box {
+            background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px dashed #444; margin-bottom: 20px;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        @media(max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+
+        /* MODAL */
         #edit-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
             display: none; justify-content: center; align-items: center; z-index: 100;
@@ -123,42 +144,84 @@
 
     <header>
         <div class="brand">Tycoon Dashboard</div>
-        <button class="refresh-btn" onclick="fetchData()">🔄 Refresh Data</button>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('users')" id="tab-users">Users</button>
+            <button class="tab-btn" onclick="switchTab('tasks')" id="tab-tasks">Task System</button>
+        </div>
+        <button class="refresh-btn" onclick="refreshAll()">🔄 Refresh</button>
     </header>
 
-    <div class="stats-container">
-        <div class="stat-card">
-            <div class="stat-label">Total Users</div>
-            <div class="stat-value" id="stat-users">0</div>
+    <!-- USER MANAGEMENT VIEW -->
+    <div id="view-users" class="view-section active">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="stat-users">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Coins Circulating</div>
+                <div class="stat-value" style="color:var(--gold-primary)" id="stat-coins">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending SOL</div>
+                <div class="stat-value" style="color:#9945FF" id="stat-sol">0.00</div>
+            </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-label">Coins in Circulation</div>
-            <div class="stat-value" style="color:var(--gold-primary)" id="stat-coins">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Pending SOL</div>
-            <div class="stat-value" style="color:#9945FF" id="stat-sol">0.00</div>
-        </div>
-    </div>
 
-    <div class="table-wrapper">
         <div class="table-controls">
             <input type="text" id="search-inp" class="search-bar" placeholder="Search by Name or ID..." onkeyup="filterTable()">
         </div>
+        
         <div class="table-scroll">
             <table id="user-table">
                 <thead>
                     <tr>
                         <th>User</th>
+                        <th>User ID (UID)</th>
                         <th>Coins</th>
                         <th>SOL Balance</th>
-                        <th>Level/XP</th>
+                        <th>Level</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="table-body">
-                    <!-- Rows generated by JS -->
-                </tbody>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TASK SYSTEM VIEW -->
+    <div id="view-tasks" class="view-section">
+        <h3 style="margin-bottom:15px; color:var(--gold-primary)">Create New Task</h3>
+        <div class="task-create-box">
+            <div class="form-grid">
+                <div>
+                    <label class="modal-label">Task Description</label>
+                    <input type="text" id="new-task-txt" class="admin-inp" placeholder="e.g. Join Telegram">
+                </div>
+                <div>
+                    <label class="modal-label">Reward (Coins)</label>
+                    <input type="number" id="new-task-rwd" class="admin-inp" placeholder="5000">
+                </div>
+                <div>
+                    <label class="modal-label">Link URL</label>
+                    <input type="text" id="new-task-url" class="admin-inp" placeholder="https://...">
+                </div>
+                <button onclick="addTask()" class="refresh-btn" style="background:var(--success); color:black; font-weight:bold; height:42px;">+ ADD TASK</button>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom:15px; color:white;">Active Tasks</h3>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Reward</th>
+                        <th>Link</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="task-body"></tbody>
             </table>
         </div>
     </div>
@@ -186,79 +249,68 @@
     </div>
 
     <script>
-        // --- 1. FIREBASE CONFIG (MUST MATCH GAME) ---
+        // CONFIG
         const firebaseConfig = { apiKey: "AIzaSyB5gIPpuzMJG_Ns59vzG8kITNlcf_k1guw", authDomain: "japear-c00aa.firebaseapp.com", projectId: "japear-c00aa", storageBucket: "japear-c00aa.firebasestorage.app", messagingSenderId: "624280269067", appId: "1:624280269067:web:440dc99a3b9710a6eef20e", databaseURL: "https://japear-c00aa-default-rtdb.firebaseio.com/" };
-        
         try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error(e); }
         const db = firebase.database();
 
         let allUsers = [];
+        let allTasks = [];
 
-        // --- 2. ADMIN AUTH ---
+        // --- AUTH ---
         function checkAdmin() {
-            const p = document.getElementById('admin-pass').value;
-            // SIMPLE PASSWORD CHECK (Change this!)
-            if(p === 'admin123') {
+            if(document.getElementById('admin-pass').value === 'admin123') {
                 document.getElementById('login-overlay').style.display = 'none';
-                fetchData();
+                refreshAll();
             } else {
                 document.getElementById('login-err').innerText = 'Invalid Password';
             }
         }
 
-        // --- 3. HELPER FUNCTIONS ---
-        const fmt = (num) => {
-            if(num >= 1000000) return (num/1000000).toFixed(2) + 'M';
-            if(num >= 1000) return (num/1000).toFixed(1) + 'k';
-            return Math.floor(num).toLocaleString();
-        };
+        // --- TABS ---
+        function switchTab(tab) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('view-'+tab).classList.add('active');
+            document.getElementById('tab-'+tab).classList.add('active');
+        }
 
-        // --- 4. FETCH DATA ---
-        function fetchData() {
+        function refreshAll() {
+            fetchUsers();
+            fetchTasks();
+        }
+
+        // --- USERS LOGIC ---
+        function fetchUsers() {
             const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading data...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
 
             db.ref('users').once('value', (snapshot) => {
                 allUsers = [];
-                let totalCoins = 0;
-                let totalSol = 0;
+                let totalCoins = 0, totalSol = 0;
                 
                 snapshot.forEach(child => {
-                    const uid = child.key;
-                    const data = child.val();
-                    const uObj = {
-                        uid: uid,
-                        name: data.name || 'Unknown',
-                        coins: data.coins || 0,
-                        sol: data.sol || 0,
-                        xp: data.xp || 0
-                    };
+                    const d = child.val();
+                    const uObj = { uid: child.key, name: d.name || 'Unknown', coins: d.coins || 0, sol: d.sol || 0, xp: d.xp || 0 };
                     allUsers.push(uObj);
                     totalCoins += uObj.coins;
                     totalSol += uObj.sol;
                 });
 
-                // Sort by Coins descending
                 allUsers.sort((a, b) => b.coins - a.coins);
-
-                // Update Stats
+                
                 document.getElementById('stat-users').innerText = allUsers.length;
                 document.getElementById('stat-coins').innerText = fmt(totalCoins);
                 document.getElementById('stat-sol').innerText = totalSol.toFixed(4);
-
-                renderTable(allUsers);
+                renderUserTable(allUsers);
             });
         }
 
-        // --- 5. RENDER TABLE ---
-        function renderTable(data) {
+        function renderUserTable(data) {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
-
-            if(data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No users found.</td></tr>';
-                return;
-            }
+            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No users found.</td></tr>'; return; }
 
             data.forEach(u => {
                 const tr = document.createElement('tr');
@@ -266,15 +318,13 @@
                     <td>
                         <div class="user-cell">
                             <div class="avatar-mini">${u.name.substring(0,1).toUpperCase()}</div>
-                            <div>
-                                <div style="font-weight:bold;">${u.name}</div>
-                                <div style="font-size:10px; color:#666;">${u.uid.substring(0,8)}...</div>
-                            </div>
+                            <strong>${u.name}</strong>
                         </div>
                     </td>
-                    <td style="color:var(--gold-primary); font-family:'Chakra Petch'">${fmt(u.coins)}</td>
-                    <td style="color:#9945FF; font-family:'Chakra Petch'">${u.sol.toFixed(4)}</td>
-                    <td>${fmt(u.xp)} XP</td>
+                    <td><span class="uid-pill" onclick="copyToClip('${u.uid}')" title="Click to Copy">${u.uid}</span></td>
+                    <td style="color:var(--gold-primary)">${fmt(u.coins)}</td>
+                    <td style="color:#9945FF">${u.sol.toFixed(4)}</td>
+                    <td>${Math.floor(Math.sqrt(u.xp/500))+1}</td>
                     <td>
                         <button class="btn-sm btn-edit" onclick="openEdit('${u.uid}')">EDIT</button>
                         <button class="btn-sm btn-ban" onclick="deleteUser('${u.uid}')">DEL</button>
@@ -284,54 +334,90 @@
             });
         }
 
-        // --- 6. FILTER ---
-        function filterTable() {
-            const term = document.getElementById('search-inp').value.toLowerCase();
-            const filtered = allUsers.filter(u => 
-                u.name.toLowerCase().includes(term) || u.uid.toLowerCase().includes(term)
-            );
-            renderTable(filtered);
+        // --- TASKS LOGIC ---
+        function fetchTasks() {
+            const tbody = document.getElementById('task-body');
+            db.ref('system_tasks').once('value', (s) => {
+                tbody.innerHTML = '';
+                if(!s.exists()) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No tasks active.</td></tr>'; return; }
+                
+                s.forEach(child => {
+                    const t = child.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${t.txt}</td>
+                        <td style="color:var(--gold-primary)">+${fmt(t.rwd)}</td>
+                        <td><a href="${t.url}" target="_blank" style="color:#aaa;">Link ↗</a></td>
+                        <td><button class="btn-sm btn-ban" onclick="deleteTask('${child.key}')">REMOVE</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
         }
 
-        // --- 7. ACTIONS (EDIT / DELETE) ---
-        function deleteUser(uid) {
-            if(confirm("Are you sure you want to PERMANENTLY delete this user? This cannot be undone.")) {
-                db.ref('users/' + uid).remove()
-                .then(() => { alert('User deleted'); fetchData(); })
-                .catch(e => alert(e.message));
+        function addTask() {
+            const txt = document.getElementById('new-task-txt').value;
+            const rwd = parseInt(document.getElementById('new-task-rwd').value);
+            const url = document.getElementById('new-task-url').value;
+
+            if(!txt || !rwd || !url) return alert("Fill all fields");
+
+            db.ref('system_tasks').push({ txt, rwd, url })
+            .then(() => {
+                alert("Task Live!");
+                document.getElementById('new-task-txt').value = '';
+                document.getElementById('new-task-rwd').value = '';
+                document.getElementById('new-task-url').value = '';
+                fetchTasks();
+            });
+        }
+
+        function deleteTask(key) {
+            if(confirm("Delete this task?")) {
+                db.ref('system_tasks/'+key).remove().then(fetchTasks);
             }
+        }
+
+        // --- HELPERS & ACTIONS ---
+        function copyToClip(text) {
+            navigator.clipboard.writeText(text).then(() => alert("UID Copied: " + text));
         }
 
         function openEdit(uid) {
             const u = allUsers.find(x => x.uid === uid);
             if(!u) return;
-
             document.getElementById('edit-uid').value = uid;
             document.getElementById('edit-name').value = u.name;
             document.getElementById('edit-coins').value = Math.floor(u.coins);
             document.getElementById('edit-sol').value = u.sol;
-
             document.getElementById('edit-modal').style.display = 'flex';
         }
 
         function saveUserEdit() {
             const uid = document.getElementById('edit-uid').value;
-            const newName = document.getElementById('edit-name').value;
-            const newCoins = parseFloat(document.getElementById('edit-coins').value);
-            const newSol = parseFloat(document.getElementById('edit-sol').value);
-
-            if(!uid) return;
-
             db.ref('users/' + uid).update({
-                name: newName,
-                coins: newCoins,
-                sol: newSol
+                name: document.getElementById('edit-name').value,
+                coins: parseFloat(document.getElementById('edit-coins').value),
+                sol: parseFloat(document.getElementById('edit-sol').value)
             }).then(() => {
                 document.getElementById('edit-modal').style.display = 'none';
-                fetchData(); // Refresh list
-            }).catch(e => alert(e.message));
+                fetchUsers();
+            });
         }
 
+        function deleteUser(uid) {
+            if(confirm("Permanently delete user?")) {
+                db.ref('users/' + uid).remove().then(fetchUsers);
+            }
+        }
+
+        function filterTable() {
+            const term = document.getElementById('search-inp').value.toLowerCase();
+            const filtered = allUsers.filter(u => u.name.toLowerCase().includes(term) || u.uid.toLowerCase().includes(term));
+            renderUserTable(filtered);
+        }
+
+        const fmt = (n) => n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'k' : n.toLocaleString();
     </script>
 </body>
 </html>
