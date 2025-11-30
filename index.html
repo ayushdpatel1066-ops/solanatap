@@ -11,6 +11,7 @@
 
     <!-- SDKS -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- AD SCRIPT ZONE -->
     <script src="https://libtl.com/sdk.js" data-zone="10254149" data-sdk="show_10254149"></script>
 
     <style>
@@ -403,7 +404,6 @@
             lastMiniClaim: 0 
         };
 
-        // --- HARDCODED FALLBACK TASKS ---
         const DEFAULT_TASKS = {
             t1: { title: "Join Community", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url: "https://t.me/soltapcoin" },
             t2: { title: "Follow X", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", url: "https://twitter.com" },
@@ -436,8 +436,7 @@
         const IDLE_LIMIT = 45;
 
         async function init() {
-            initInAppAds();
-
+            // No strict init here, checked in showAd
             try {
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                     user.id = tg.initDataUnsafe.user.id.toString();
@@ -469,18 +468,13 @@
                 console.error("User Load Error:", e);
             }
 
-            // Ensure Tasks Exist in DB, then Load
             await initDefaultTasks(); 
             loadTasks();
-            
             updateUI(); 
             renderAds();
-            
             setInterval(saveUser, 4000);
-            // FIXED: Auto Miner Loop
             setInterval(autoMine, 1000);
             setInterval(checkAds, 1000);
-            
             setInterval(checkIdle, 1000);
             setupIdleListeners();
         }
@@ -496,17 +490,33 @@
             }
         }
 
-        function showAd(type = 'rewarded') {
+        // --- STRICT AD LOGIC ---
+        function showAd() {
             return new Promise((resolve, reject) => {
+                // 1. Check Internet
+                if(!navigator.onLine) {
+                    tg.showAlert("No Internet! Cannot load ad.");
+                    reject();
+                    return;
+                }
+                
+                // 2. Check if SDK Loaded
                 if (typeof show_10254149 !== 'function') {
-                    resolve(); 
-                    return; 
+                    tg.showAlert("Ad System Loading... Wait 5s and try again.");
+                    reject();
+                    return;
                 }
-                if (type === 'popup') {
-                    show_10254149('pop').then(resolve).catch(reject);
-                } else {
-                    show_10254149().then(resolve).catch(reject);
-                }
+
+                // 3. Execute Ad
+                show_10254149().then(() => {
+                    // Success
+                    resolve();
+                }).catch((e) => {
+                    // Fail
+                    console.error(e);
+                    tg.showAlert("Ad failed to load. No reward given.");
+                    reject();
+                });
             });
         }
 
@@ -528,24 +538,30 @@
             }
         }
 
+        // --- STRICT RESUME ---
         window.resumeFromIdle = () => {
-            showAd('rewarded').then(() => {
+            showAd().then(() => {
                 isIdle = false;
                 idleTimer = 0;
                 document.getElementById('idle-modal').style.display = 'none';
+            }).catch(() => {
+                // Stay Idle
             });
         }
 
+        // --- STRICT MINI BONUS ---
         window.claimMiniBonus = () => {
             const now = Date.now();
             if (now - user.lastMiniClaim < 40000) return; 
 
-            showAd('rewarded').then(() => {
+            showAd().then(() => {
                 user.score += 200;
                 user.lastMiniClaim = Date.now();
                 saveUser();
                 updateUI();
                 tg.showAlert("Brilliant! +200 Coins");
+            }).catch(() => {
+                // No Reward
             });
         }
 
@@ -562,7 +578,6 @@
              document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              
-             // Update Auto Rate Display
              const arEl = document.getElementById('auto-rate');
              arEl.innerText = user.autoMiner;
              if(user.autoMiner > 0 && !isIdle) {
@@ -622,27 +637,23 @@
             },3000);
         }
 
-        // --- FIXED TASK LOGIC ---
         async function initDefaultTasks() {
              try {
                  const s = await get(ref(db,'tasks'));
                  if(!s.exists()) {
                      await set(ref(db,'tasks'), DEFAULT_TASKS);
                  }
-             } catch(e) {
-                 console.log("Task Init Error (using fallback)");
-             }
+             } catch(e) { console.log("Task Init Error"); }
         }
 
         async function loadTasks() {
             const l = document.getElementById('task-list'); 
             l.innerHTML='';
-            
-            let t = DEFAULT_TASKS; // Start with fallback
+            let t = DEFAULT_TASKS; 
             try {
                 const s = await get(ref(db,'tasks')); 
                 if(s.exists()) t = s.val();
-            } catch(e) { console.log("DB Read Error"); }
+            } catch(e) { }
 
             Object.keys(t).forEach(k=>{
                 const done=user.completedTasks.includes(k);
@@ -660,33 +671,31 @@
             });
         }
 
-        // --- PERFECTED BOOST SYSTEM ---
+        // --- STRICT BOOST SYSTEM ---
         window.buyBot = () => {
             if (user.autoMiner >= 10) {
                 tg.showAlert("Max Level Reached!");
                 return;
             }
             if (user.score >= 1000) {
-                showAd('rewarded').then(() => {
+                showAd().then(() => {
                     user.score -= 1000;
                     user.autoMiner++;
                     saveUser();
                     updateUI();
                     tg.showAlert("Success! Auto-Bot Upgraded.");
                 }).catch(() => {
-                    tg.showAlert("Ad failed. Try again.");
+                    // No Upgrade
                 });
             } else {
                 tg.showAlert("Need 1000 Coins to upgrade!");
             }
         }
         
-        // --- FIXED AUTO MINER ---
         function autoMine(){
-            if(isIdle) return; // Paused if idle
+            if(isIdle) return; 
             if(user.autoMiner > 0){
                 user.score += user.autoMiner;
-                // Only update UI, don't save every second to save bandwidth
                 updateUI();
             }
         }
@@ -732,17 +741,31 @@
             }
         }
         
+        // --- STRICT MAGIC CLAIM ---
         window.claimAd=(i,mins,rew)=>{
-            showAd('rewarded').then(()=>{
+            showAd().then(()=>{
                 user.score+=rew;
                 if(!user.adClaims) user.adClaims = [0,0,0,0];
                 user.adClaims[i]=Date.now();
                 saveUser();
                 updateUI();
+            }).catch(() => {
+                // No Reward
             });
         }
 
-        window.watchRefillAd=()=>{showAd('rewarded').then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
+        // --- STRICT REFILL ---
+        window.watchRefillAd=()=>{
+            showAd().then(()=>{
+                user.energy=user.maxEnergy;
+                saveUser();
+                updateUI();
+                document.getElementById('limit-modal').style.display='none';
+            }).catch(() => {
+                // No Refill
+            });
+        }
+
         window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
         window.closeWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='none'; }
 
