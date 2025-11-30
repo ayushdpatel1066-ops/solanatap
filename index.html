@@ -11,6 +11,7 @@
 
     <!-- SDKS -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- AD SCRIPT ZONE -->
     <script src="https://libtl.com/sdk.js" data-zone="10254149" data-sdk="show_10254149"></script>
 
     <style>
@@ -135,45 +136,6 @@
         
         .auto-mining-active { color: var(--sol-green); animation: pulseText 2s infinite; }
         @keyframes pulseText { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-
-        /* --- SPIN WHEEL CSS --- */
-        .wheel-container {
-            position: relative; width: 300px; height: 300px; margin: 20px auto;
-        }
-        .wheel {
-            width: 100%; height: 100%; border-radius: 50%;
-            border: 8px solid #222;
-            background: conic-gradient(
-                #FF4757 0deg 60deg,    /* Withdraw (Red) */
-                #14F195 60deg 120deg,  /* 200 */
-                #9945FF 120deg 180deg, /* 1000 */
-                #FFD700 180deg 240deg, /* 500 */
-                #14F195 240deg 300deg, /* 5000 */
-                #9945FF 300deg 360deg  /* 2000 */
-            );
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
-            box-shadow: 0 0 30px rgba(153, 69, 255, 0.3);
-            position: relative;
-        }
-        .wheel-center {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 60px; height: 60px; background: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 10px black; font-weight: 900; color: black; font-size: 12px; z-index: 5;
-        }
-        .marker {
-            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; 
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid white;
-            z-index: 10; filter: drop-shadow(0 2px 2px black);
-        }
-        .wheel-legend {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; font-size: 11px;
-        }
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
 
         /* --- WALLET SCREEN --- */
         .wallet-card {
@@ -318,29 +280,7 @@
         <div id="ad-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
     </div>
 
-    <!-- 4. SPIN TAB (NEW) -->
-    <div id="screen-spin" class="screen">
-        <h2 style="text-align:center; color: var(--sol-green);">Lucky Wheel</h2>
-        <div style="text-align:center; font-size:12px; color:#888; margin-bottom:20px;">Spin to win Coins or Withdraw!</div>
-        
-        <div class="wheel-container">
-            <div class="marker"></div>
-            <div class="wheel" id="wheel">
-                <div class="wheel-center">SOL</div>
-            </div>
-        </div>
-
-        <div class="wheel-legend">
-            <div class="legend-item"><div class="dot" style="background:#FF4757"></div> Withdraw</div>
-            <div class="legend-item"><div class="dot" style="background:#14F195"></div> 200/5000</div>
-            <div class="legend-item"><div class="dot" style="background:#9945FF"></div> 1000/2000</div>
-            <div class="legend-item"><div class="dot" style="background:#FFD700"></div> 500</div>
-        </div>
-
-        <button class="btn-action" style="margin-top: 30px;" onclick="spinWheel()">📺 Spin Now (Ad)</button>
-    </div>
-
-    <!-- 5. WALLET TAB -->
+    <!-- 4. WALLET TAB -->
     <div id="screen-wallet" class="screen">
         <div class="wallet-card">
             <div style="font-size: 14px; opacity: 0.8;">Total Asset Value</div>
@@ -392,10 +332,7 @@
         <div class="nav-btn active" onclick="nav('mine', this)"><i class="ri-hammer-fill"></i><span>Mine</span></div>
         <div class="nav-btn" onclick="nav('tasks', this)"><i class="ri-list-check"></i><span>Tasks</span></div>
         
-        <!-- SPIN MENU -->
-        <div class="nav-btn" onclick="nav('spin', this)"><i class="ri-pie-chart-2-fill"></i><span>Spin</span></div>
-        
-        <!-- NEW OFFERS MENU -->
+        <!-- OFFERS MENU (Kept as requested) -->
         <div class="nav-btn" onclick="window.location.href='offers.html'"><i class="ri-store-2-fill"></i><span>Offers</span></div>
         
         <div class="nav-btn" onclick="nav('boost', this)"><i class="ri-rocket-2-fill"></i><span>Boost</span></div>
@@ -779,46 +716,6 @@
                 saveUser();
                 updateUI();
                 document.getElementById('limit-modal').style.display='none';
-            }).catch(() => {});
-        }
-
-        // --- SPIN WHEEL LOGIC (RIGGED) ---
-        let isSpinning = false;
-        window.spinWheel = () => {
-            if(isSpinning) return;
-            
-            showAd().then(() => {
-                isSpinning = true;
-                const wheel = document.getElementById('wheel');
-                
-                const safePrizes = [
-                    { val: 200, label: "200 Coins" },
-                    { val: 1000, label: "1000 Coins" },
-                    { val: 500, label: "500 Coins" },
-                    { val: 5000, label: "5000 Coins" },
-                    { val: 2000, label: "2000 Coins" }
-                ];
-
-                const randIndex = Math.floor(Math.random() * safePrizes.length);
-                const targetSegment = randIndex + 1; // 1 to 5
-                const prize = safePrizes[randIndex];
-
-                const segmentCenter = (targetSegment * 60) + 30;
-                const totalRot = (360 * 5) - segmentCenter;
-
-                wheel.style.transform = `rotate(${totalRot}deg)`;
-
-                setTimeout(() => {
-                    user.score += prize.val;
-                    saveUser();
-                    updateUI();
-                    tg.showAlert(`You won ${prize.label}!`);
-                    isSpinning = false;
-                    wheel.style.transition = 'none';
-                    wheel.style.transform = 'rotate(0deg)';
-                    setTimeout(() => { wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)'; }, 100);
-                }, 4000);
-
             }).catch(() => {});
         }
 
