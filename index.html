@@ -82,7 +82,7 @@
             display: inline-block; padding: 4px 12px; border-radius: 12px; margin-top: 8px;
         }
         
-        /* MINI BONUS BUTTON (New) */
+        /* MINI BONUS BUTTON */
         .mini-bonus-box {
             position: absolute; top: 0; right: 0; z-index: 20;
             display: flex; flex-direction: column; align-items: flex-end;
@@ -274,6 +274,7 @@
             <button class="task-btn" id="bot-btn" onclick="buyBot()">Buy 1000</button>
         </div>
         <h3 style="margin-top: 25px;">Magic Claims</h3>
+        <!-- Updated to 4 slots in JS -->
         <div id="ad-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
     </div>
 
@@ -317,8 +318,8 @@
             </div>
         </div>
 
-        <!-- MOVED TELEGRAM BUTTON HERE -->
-        <button class="tg-wallet-btn" onclick="tg.openLink('https://t.me/soltapcoin')">
+        <!-- FIXED TELEGRAM BUTTON -->
+        <button class="tg-wallet-btn" onclick="openTgLink('https://t.me/soltapcoin')">
             <i class="ri-telegram-fill"></i> Join Channel
         </button>
 
@@ -338,6 +339,16 @@
             <i class="ri-battery-2-fill" style="font-size: 50px; color: #ff4757;"></i>
             <h3>Energy Empty!</h3>
             <button class="btn-action" onclick="watchRefillAd()">📺 Refill</button>
+        </div>
+    </div>
+    
+    <!-- NEW IDLE MODAL -->
+    <div id="idle-modal" class="modal-overlay" style="z-index: 1000;">
+        <div class="modal-box">
+            <i class="ri-zzz-fill" style="font-size: 50px; color: #999;"></i>
+            <h3>Sleep Mode</h3>
+            <p style="color:#888; font-size:14px;">Miner paused due to inactivity.</p>
+            <button class="btn-action" onclick="resumeFromIdle()">📺 Wake Up (Ad)</button>
         </div>
     </div>
 
@@ -380,21 +391,31 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Global for button onclicks
+        window.openTgLink = (url) => { tg.openLink(url); };
+
         let user = { 
             id: null, username: "Guest", score: 0, 
             energy: 200, maxEnergy: 200, autoMiner: 0, 
-            adClaims: [0,0,0,0,0,0], completedTasks: [],
-            lastMiniClaim: 0 // New field for mini button
+            adClaims: [0,0,0,0], completedTasks: [], // Changed to 4 slots
+            lastMiniClaim: 0 
         };
-        const AD_SLOTS = [2, 5, 10, 15, 30, 60];
+
+        // MODIFIED: 4 Magic Claim Slots starting from 500
+        const MAGIC_CONFIG = [
+            { mins: 5, reward: 500 },
+            { mins: 15, reward: 1000 },
+            { mins: 30, reward: 2000 },
+            { mins: 60, reward: 5000 }
+        ];
+
         const AD_IMAGES = [
             "https://cdn-icons-png.flaticon.com/512/2534/2534204.png", 
             "https://cdn-icons-png.flaticon.com/512/2849/2849764.png", 
             "https://cdn-icons-png.flaticon.com/512/9499/9499690.png",
-            "https://cdn-icons-png.flaticon.com/512/8146/8146757.png", 
-            "https://cdn-icons-png.flaticon.com/512/2545/2545603.png", 
-            "https://cdn-icons-png.flaticon.com/512/625/625393.png"
+            "https://cdn-icons-png.flaticon.com/512/8146/8146757.png"
         ];
+
         const RATES = { 
             SOL: { price: 148.50, icon: "https://cryptologos.cc/logos/solana-sol-logo.png" },
             TON: { price: 5.50, icon: "https://cryptologos.cc/logos/toncoin-ton-logo.png" },
@@ -402,17 +423,32 @@
             ETH: { price: 3500.00, icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png" }
         };
 
+        // IDLE LOGIC VARIABLES
+        let idleTimer = 0;
+        let isIdle = false;
+        const IDLE_LIMIT = 45; // seconds
+
         async function init() {
-            // Trigger In-App Interstitial Ad Logic Immediately
             initInAppAds();
 
-            if (tg.initDataUnsafe?.user) {
-                user.id = tg.initDataUnsafe.user.id.toString();
-                user.username = tg.initDataUnsafe.user.first_name;
-            } else { user.id = "test_user_ad_update_v7"; }
-            document.getElementById('username').innerText = user.username;
-
+            // FIXED: Connection Logic to avoid errors if tg.initDataUnsafe is incomplete
             try {
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+                    user.id = tg.initDataUnsafe.user.id.toString();
+                    user.username = tg.initDataUnsafe.user.first_name || "Miner";
+                } else {
+                    // Fallback for testing or missing ID (avoids crashes)
+                    const localId = localStorage.getItem('local_sim_id');
+                    if(localId) {
+                        user.id = localId;
+                    } else {
+                        user.id = "test_" + Math.floor(Math.random()*100000);
+                        localStorage.setItem('local_sim_id', user.id);
+                    }
+                    user.username = "Guest User";
+                }
+                document.getElementById('username').innerText = user.username;
+
                 // Load User
                 const snap = await get(ref(db, 'sol_users/' + user.id));
                 if (snap.exists()) {
@@ -420,11 +456,15 @@
                     user.score = Number(d.score || 0);
                     user.energy = Number(d.energy ?? 200);
                     user.autoMiner = Number(d.autoMiner || 0);
-                    user.adClaims = d.adClaims || user.adClaims;
+                    user.adClaims = d.adClaims || [0,0,0,0];
                     user.completedTasks = d.completedTasks || [];
                     user.lastMiniClaim = d.lastMiniClaim || 0;
                 } else { saveUser(); }
-            } catch (e) {}
+
+            } catch (e) {
+                console.error("User Load Error:", e);
+                tg.showAlert("Connection Error. Please restart.");
+            }
 
             initDefaultTasks(); 
             loadTasks();
@@ -433,62 +473,75 @@
             setInterval(saveUser, 4000);
             setInterval(autoMine, 1000);
             setInterval(checkAds, 1000);
+            
+            // Start Idle Watcher
+            setInterval(checkIdle, 1000);
+            setupIdleListeners();
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
 
-        // --- AD LOGIC WRAPPER (Zone 10254149) ---
         function initInAppAds() {
             if(typeof show_10254149 === 'function') {
                 show_10254149({
                     type: 'inApp',
-                    inAppSettings: {
-                        frequency: 2,
-                        capping: 0.1,
-                        interval: 30,
-                        timeout: 5,
-                        everyPage: false
-                    }
+                    inAppSettings: { frequency: 2, capping: 0.1, interval: 30, timeout: 5, everyPage: false }
                 });
             }
         }
 
-        // Central Ad Function supporting 'rewarded' (default) and 'popup'
         function showAd(type = 'rewarded') {
             return new Promise((resolve, reject) => {
                 if (typeof show_10254149 !== 'function') {
-                    alert('Ad Simulation: Success'); 
+                    // Simulation for testing
                     resolve(); 
                     return; 
                 }
-
                 if (type === 'popup') {
-                    // Rewarded Popup
-                    show_10254149('pop').then(() => {
-                        resolve();
-                    }).catch(e => {
-                        console.log(e);
-                        reject();
-                    });
+                    show_10254149('pop').then(resolve).catch(reject);
                 } else {
-                    // Rewarded Interstitial (Standard)
-                    show_10254149().then(() => {
-                        resolve();
-                    }).catch(e => {
-                        console.log(e);
-                        reject();
-                    });
+                    // Standard Reward Interstitial
+                    show_10254149().then(resolve).catch(reject);
                 }
             });
         }
 
-        // --- MINI BUTTON LOGIC ---
+        // --- IDLE LOGIC IMPLEMENTATION ---
+        function setupIdleListeners() {
+            const reset = () => { if(!isIdle) idleTimer = 0; };
+            const zone = document.getElementById('screen-mine');
+            // Listen for taps/mouse moves on the mine screen
+            zone.addEventListener('click', reset);
+            zone.addEventListener('touchstart', reset);
+            zone.addEventListener('mousemove', reset);
+        }
+
+        function checkIdle() {
+            // Only check idle if on mine screen and not already idle
+            if(document.getElementById('screen-mine').classList.contains('active') && !isIdle && document.getElementById('limit-modal').style.display !== 'flex') {
+                idleTimer++;
+                if(idleTimer >= IDLE_LIMIT) {
+                    isIdle = true;
+                    document.getElementById('idle-modal').style.display = 'flex';
+                }
+            }
+        }
+
+        window.resumeFromIdle = () => {
+            showAd('rewarded').then(() => {
+                isIdle = false;
+                idleTimer = 0;
+                document.getElementById('idle-modal').style.display = 'none';
+            });
+        }
+
+        // --- MINI BONUS LOGIC (MODIFIED: Rewarded Interstitial) ---
         window.claimMiniBonus = () => {
             const now = Date.now();
-            if (now - user.lastMiniClaim < 40000) return; // Still locked
+            if (now - user.lastMiniClaim < 40000) return; 
 
-            // Show Popup Ad
-            showAd('popup').then(() => {
+            // CHANGED: Use 'rewarded' (interstitial) instead of popup
+            showAd('rewarded').then(() => {
                 user.score += 200;
                 user.lastMiniClaim = Date.now();
                 saveUser();
@@ -498,7 +551,6 @@
         }
 
         window.updateUI = () => {
-             // 1. Level Logic
              let rank = { name: "Bronze Level", color: "var(--bronze)" };
              if(user.score > 5000) rank = { name: "Silver Level", color: "#c0c0c0" };
              if(user.score > 25000) rank = { name: "Gold Level", color: "var(--gold)" };
@@ -507,17 +559,14 @@
              const rnEl = document.getElementById('rank-name');
              rnEl.innerText = rank.name; rnEl.style.color = rank.color;
 
-             // 2. Score & Energy
              document.getElementById('score').innerText = Math.floor(user.score).toLocaleString();
              document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              document.getElementById('auto-rate').innerText = user.autoMiner;
 
-             // 3. Main Page SOL equivalent
              const solTotal = user.score / 10000;
              document.getElementById('real-sol').innerText = solTotal.toFixed(4);
 
-             // 4. Wallet Page Rates
              const bBtn = document.getElementById('bot-btn');
              const bStat = document.getElementById('bot-status');
              if(user.autoMiner>=10) { bBtn.innerText="MAX"; bBtn.style.background="#555"; bStat.innerText="Max (10/sec)"; }
@@ -535,11 +584,11 @@
 
         // --- GAMEPLAY ---
         document.getElementById('tap-btn').addEventListener('click', (e) => {
+            if (isIdle) return; // Prevent tapping if idle modal is up
             if (user.energy <= 0) { document.getElementById('limit-modal').style.display = 'flex'; return; }
             
             user.score++; user.energy--; 
             
-            // Animation Ripple
             const coin = document.getElementById('tap-btn');
             coin.classList.remove('ripple');
             void coin.offsetWidth; 
@@ -553,21 +602,15 @@
             tg.HapticFeedback.impactOccurred('medium'); 
         });
 
-        // --- TASK LOGIC (Supports URL from DB) ---
         window.doT = (k, r, url) => {
             const isDone = user.completedTasks.includes(k);
-            if (isDone) {
-                tg.openLink(url);
-                return;
-            }
+            if (isDone) { tg.openLink(url); return; }
             tg.openLink(url);
             setTimeout(()=>{ 
                 if(confirm('Mission Complete?')){ 
                     user.score+=r; 
                     user.completedTasks.push(k); 
-                    saveUser(); 
-                    loadTasks(); 
-                    updateUI(); 
+                    saveUser(); loadTasks(); updateUI(); 
                     tg.showAlert("Reward Claimed!");
                 } 
             },3000);
@@ -576,18 +619,8 @@
         async function initDefaultTasks() {
              const s=await get(ref(db,'tasks'));
              if(!s.exists()) set(ref(db,'tasks'), {
-                 t1: {
-                     title: "Join Community",
-                     reward: 200,
-                     img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", 
-                     url: "https://t.me/soltapcoin" // Explicit URL
-                 },
-                 t2: {
-                     title: "Follow X",
-                     reward: 200,
-                     img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", 
-                     url: "https://twitter.com" // Explicit URL
-                 }
+                 t1: { title: "Join Community", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url: "https://t.me/soltapcoin" },
+                 t2: { title: "Follow X", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", url: "https://twitter.com" }
              });
         }
 
@@ -595,12 +628,10 @@
             const s=await get(ref(db,'tasks')); 
             const l=document.getElementById('task-list'); 
             l.innerHTML='';
-            
             if(s.exists()) {
                 const t=s.val();
                 Object.keys(t).forEach(k=>{
                     const done=user.completedTasks.includes(k);
-                    // Reads 'url' from database object
                     l.innerHTML+=`
                     <div class="glass-panel task-item">
                         <img src="${t[k].img}" class="task-img">
@@ -616,20 +647,47 @@
             }
         }
 
-        // --- OTHER FUNCTIONS ---
         window.buyBot=()=>{ if(user.autoMiner>=10)return; if(user.score>=1000){user.score-=1000;user.autoMiner++;saveUser();updateUI();}else{tg.showAlert("Need 1000 Coin");}}
-        function autoMine(){if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}}
         
-        function renderAds(){ const g=document.getElementById('ad-grid');g.innerHTML='';AD_SLOTS.forEach((m,i)=>{
-            g.innerHTML+=`<div class="glass-panel ad-card"><img src="${AD_IMAGES[i]}" class="rank-img"><div style="font-size:11px">Wait ${m}m</div><div style="color:var(--sol-green);font-weight:bold">+${m*5}</div><button id="abtn-${i}" class="task-btn" style="width:100%" onclick="claimAd(${i},${m})">Claim</button></div>`;});}
+        // MODIFIED: Stop Auto Mine if Idle
+        function autoMine(){
+            if(isIdle) return; // Do not mine if idle
+            if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}
+        }
+        
+        // MODIFIED: Render 4 Magic Claims with new Rewards
+        function renderAds(){ 
+            const g=document.getElementById('ad-grid');g.innerHTML='';
+            MAGIC_CONFIG.forEach((cfg,i)=>{
+                g.innerHTML+=`
+                <div class="glass-panel ad-card">
+                    <img src="${AD_IMAGES[i]}" class="rank-img">
+                    <div style="font-size:11px">Wait ${cfg.mins}m</div>
+                    <div style="color:var(--sol-green);font-weight:bold">+${cfg.reward}</div>
+                    <button id="abtn-${i}" class="task-btn" style="width:100%" onclick="claimAd(${i},${cfg.mins},${cfg.reward})">Claim</button>
+                </div>`;
+            });
+        }
         
         function checkAds(){
             const now=Date.now();
+            // Check Boost Ads
+            MAGIC_CONFIG.forEach((cfg,i)=>{
+                const b=document.getElementById(`abtn-${i}`);
+                if(b){
+                    const d=now-(user.adClaims[i] || 0);
+                    const w=cfg.mins*60000;
+                    if(d<w){
+                        b.disabled=true;b.style.opacity=.5;
+                        b.innerText=Math.ceil((w-d)/60000)+"m";
+                    }else{
+                        b.disabled=false;b.style.opacity=1;
+                        b.innerText="Claim";
+                    }
+                }
+            });
             
-            // 1. Check Boost Ads
-            AD_SLOTS.forEach((m,i)=>{const b=document.getElementById(`abtn-${i}`);if(b){const d=now-user.adClaims[i];const w=m*60000;if(d<w){b.disabled=true;b.style.opacity=.5;b.innerText=Math.ceil((w-d)/60000)+"m";}else{b.disabled=false;b.style.opacity=1;b.innerText="Claim";}}});
-            
-            // 2. Check Mini Bonus Button Lock (40s)
+            // Check Mini Bonus Button Lock (40s)
             const mb = document.getElementById('mini-btn');
             const diff = now - user.lastMiniClaim;
             if (diff < 40000) {
@@ -641,15 +699,21 @@
             }
         }
         
-        // Boost Ad -> Rewarded Interstitial
-        window.claimAd=(i,m)=>{showAd('rewarded').then(()=>{user.score+=m*5;user.adClaims[i]=Date.now();saveUser();updateUI();});}
-        // Refill Ad -> Rewarded Interstitial
-        window.watchRefillAd=()=>{showAd('rewarded').then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
+        window.claimAd=(i,mins,rew)=>{
+            showAd('rewarded').then(()=>{
+                user.score+=rew;
+                // Ensure array size matches
+                if(!user.adClaims) user.adClaims = [0,0,0,0];
+                user.adClaims[i]=Date.now();
+                saveUser();
+                updateUI();
+            });
+        }
 
+        window.watchRefillAd=()=>{showAd('rewarded').then(()=>{user.energy=user.maxEnergy;saveUser();updateUI();document.getElementById('limit-modal').style.display='none';});}
         window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
         window.closeWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='none'; }
 
-        // --- LEADERBOARD (MY RANK TOP) ---
         window.openLeaderboard = async () => {
             document.getElementById('lb-modal').style.display='flex';
             const l = document.getElementById('lb-list');
@@ -669,7 +733,6 @@
                 const myData = (myIdx !== -1) ? ar[myIdx] : { u: user.username, s: user.score };
 
                 l.innerHTML = '';
-                // My Rank
                 l.innerHTML += `
                     <div class="lb-row my-rank-row">
                         <div class="lb-rank" style="color:var(--sol-green); font-weight:900;">#${myRank > 0 ? myRank : '-'}</div>
@@ -678,7 +741,6 @@
                     </div>
                     <div style="text-align:center; font-size:10px; color:#666; margin-bottom:10px;">— TOP 20 —</div>
                 `;
-                // Top 20
                 const top20 = ar.slice(0, 20);
                 top20.forEach((u, i) => {
                     let rankColor = "white";
