@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
-    <!-- SDKS (UPDATED ZONE 10254149) -->
+    <!-- SDKS -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://libtl.com/sdk.js" data-zone="10254149" data-sdk="show_10254149"></script>
 
@@ -100,7 +100,7 @@
         /* Coin & Animation */
         .miner-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; flex-direction: column; }
         
-        /* UPDATED: SMALLER COIN SIZE */
+        /* UPDATED COIN SIZE */
         .solana-coin {
             width: 210px; height: 210px; border-radius: 50%;
             background: radial-gradient(circle, #1a1a1a, #000);
@@ -133,6 +133,12 @@
             background: linear-gradient(90deg, var(--sol-purple), var(--sol-green));
             transition: width 0.3s ease;
         }
+        
+        .auto-mining-active {
+            color: var(--sol-green);
+            animation: pulseText 2s infinite;
+        }
+        @keyframes pulseText { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
 
         /* --- WALLET SCREEN --- */
         .wallet-card {
@@ -155,7 +161,6 @@
         .swap-icon { width: 30px; height: 30px; border-radius: 50%; margin-right: 8px; object-fit: contain; }
         .swap-input { background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; text-align: right; width: 150px; outline: none; font-family: var(--font-main); }
         
-        /* Telegram Button in Wallet */
         .tg-wallet-btn {
             width: 100%; padding: 14px; border-radius: 15px; border: none;
             background: rgba(40, 168, 233, 0.15); border: 1px solid rgba(40, 168, 233, 0.4);
@@ -177,10 +182,8 @@
             background: white; color: black; border: none; padding: 8px 16px;
             border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer; min-width: 80px;
         }
-        .task-btn.checking { background: #555; color: #aaa; pointer-events: none; }
-        .task-btn.claim { background: var(--sol-green); color: black; animation: pulse 1s infinite; }
         .task-btn.done { 
-            background: transparent; border: 1px solid var(--sol-green); color: var(--sol-green); pointer-events: none;
+            background: transparent; border: 1px solid var(--sol-green); color: var(--sol-green);
         }
 
         /* --- BOOST RANK IMAGES --- */
@@ -232,7 +235,6 @@
 
         <div class="miner-area">
             
-            <!-- MINI BONUS BUTTON -->
             <div class="mini-bonus-box">
                 <div id="mini-btn" class="mini-btn" onclick="claimMiniBonus()">
                     <i class="ri-gift-fill"></i> <span>+200</span>
@@ -248,7 +250,7 @@
         <div class="energy-box">
             <div class="energy-info">
                 <span>⚡ Energy</span>
-                <span id="energy-txt">200/200</span>
+                <span id="energy-txt">50/50</span>
             </div>
             <div class="energy-track">
                 <div class="energy-fill" id="energy-fill"></div>
@@ -321,7 +323,6 @@
             </div>
         </div>
 
-        <!-- TELEGRAM BUTTON -->
         <button class="tg-wallet-btn" onclick="openTgLink('https://t.me/soltapcoin')">
             <i class="ri-telegram-fill"></i> Join Channel
         </button>
@@ -345,7 +346,6 @@
         </div>
     </div>
     
-    <!-- IDLE MODAL -->
     <div id="idle-modal" class="modal-overlay" style="z-index: 1000;">
         <div class="modal-box">
             <i class="ri-zzz-fill" style="font-size: 50px; color: #999;"></i>
@@ -363,7 +363,6 @@
         </div>
     </div>
 
-    <!-- LEADERBOARD MODAL -->
     <div id="lb-modal" class="modal-overlay">
         <div class="modal-box" style="height: 70%; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
@@ -378,7 +377,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- YOUR CONFIGURATION ---
+        // --- YOUR PRIVATE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
             authDomain: "solanacoin-6d9a8.firebaseapp.com",
@@ -399,9 +398,16 @@
 
         let user = { 
             id: null, username: "Guest", score: 0, 
-            energy: 200, maxEnergy: 200, autoMiner: 0, 
+            energy: 50, maxEnergy: 50, autoMiner: 0, 
             adClaims: [0,0,0,0], completedTasks: [], 
             lastMiniClaim: 0 
+        };
+
+        // --- HARDCODED FALLBACK TASKS ---
+        const DEFAULT_TASKS = {
+            t1: { title: "Join Community", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url: "https://t.me/soltapcoin" },
+            t2: { title: "Follow X", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", url: "https://twitter.com" },
+            t3: { title: "Subscribe YouTube", reward: 300, img: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", url: "https://youtube.com" }
         };
 
         const MAGIC_CONFIG = [
@@ -427,7 +433,7 @@
 
         let idleTimer = 0;
         let isIdle = false;
-        const IDLE_LIMIT = 45; 
+        const IDLE_LIMIT = 45;
 
         async function init() {
             initInAppAds();
@@ -452,7 +458,7 @@
                 if (snap.exists()) {
                     const d = snap.val();
                     user.score = Number(d.score || 0);
-                    user.energy = Number(d.energy ?? 200);
+                    user.energy = Number(d.energy ?? 50);
                     user.autoMiner = Number(d.autoMiner || 0);
                     user.adClaims = d.adClaims || [0,0,0,0];
                     user.completedTasks = d.completedTasks || [];
@@ -463,13 +469,18 @@
                 console.error("User Load Error:", e);
             }
 
-            initDefaultTasks(); 
+            // Ensure Tasks Exist in DB, then Load
+            await initDefaultTasks(); 
             loadTasks();
+            
             updateUI(); 
             renderAds();
+            
             setInterval(saveUser, 4000);
+            // FIXED: Auto Miner Loop
             setInterval(autoMine, 1000);
             setInterval(checkAds, 1000);
+            
             setInterval(checkIdle, 1000);
             setupIdleListeners();
         }
@@ -499,7 +510,6 @@
             });
         }
 
-        // --- IDLE LOGIC ---
         function setupIdleListeners() {
             const reset = () => { if(!isIdle) idleTimer = 0; };
             const zone = document.getElementById('screen-mine');
@@ -526,45 +536,10 @@
             });
         }
 
-        // --- FIXED AUTO MINER ---
-        function autoMine(){
-            if(isIdle) return;
-            // Force number conversion to ensure math works
-            const rate = Number(user.autoMiner);
-            if(rate > 0){
-                user.score += rate;
-                updateUI();
-            }
-        }
-
-        // --- PERFECT BOOST SYSTEM ---
-        window.buyBot = () => {
-            // 1. Check Max
-            if (user.autoMiner >= 10) {
-                tg.showAlert("Max Level Reached!");
-                return;
-            }
-            // 2. Check Funds
-            if (user.score >= 1000) {
-                // 3. Show Ad
-                showAd('rewarded').then(() => {
-                    // 4. Execute Transaction
-                    user.score -= 1000;
-                    user.autoMiner++;
-                    saveUser();
-                    updateUI();
-                    tg.showAlert("Success! Auto-Bot Upgraded.");
-                }).catch(() => {
-                    tg.showAlert("Ad failed. Try again.");
-                });
-            } else {
-                tg.showAlert("Need 1000 Coins to upgrade!");
-            }
-        }
-
         window.claimMiniBonus = () => {
             const now = Date.now();
             if (now - user.lastMiniClaim < 40000) return; 
+
             showAd('rewarded').then(() => {
                 user.score += 200;
                 user.lastMiniClaim = Date.now();
@@ -580,28 +555,29 @@
              if(user.score > 25000) rank = { name: "Gold Level", color: "var(--gold)" };
              if(user.score > 100000) rank = { name: "Platinum Level", color: "var(--plat)" };
              
-             document.getElementById('rank-name').innerText = rank.name; 
-             document.getElementById('rank-name').style.color = rank.color;
+             const rnEl = document.getElementById('rank-name');
+             rnEl.innerText = rank.name; rnEl.style.color = rank.color;
 
              document.getElementById('score').innerText = Math.floor(user.score).toLocaleString();
              document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
-             document.getElementById('auto-rate').innerText = user.autoMiner;
+             
+             // Update Auto Rate Display
+             const arEl = document.getElementById('auto-rate');
+             arEl.innerText = user.autoMiner;
+             if(user.autoMiner > 0 && !isIdle) {
+                 arEl.parentElement.classList.add('auto-mining-active');
+             } else {
+                 arEl.parentElement.classList.remove('auto-mining-active');
+             }
 
              const solTotal = user.score / 10000;
              document.getElementById('real-sol').innerText = solTotal.toFixed(4);
 
              const bBtn = document.getElementById('bot-btn');
              const bStat = document.getElementById('bot-status');
-             if(user.autoMiner>=10) { 
-                 bBtn.innerText="MAX"; 
-                 bBtn.style.background="#555"; 
-                 bStat.innerText="Max (10/sec)"; 
-             } else { 
-                 bBtn.innerText="Buy 1000"; 
-                 bBtn.style.background="white";
-                 bStat.innerText=`${user.autoMiner}/sec (Max 10)`; 
-             }
+             if(user.autoMiner>=10) { bBtn.innerText="MAX"; bBtn.style.background="#555"; bStat.innerText="Max (10/sec)"; }
+             else { bBtn.innerText="Buy 1000"; bStat.innerText=`${user.autoMiner}/sec (Max 10)`; }
 
              const cur = document.getElementById('crypto-select').value;
              document.getElementById('target-icon').src = RATES[cur].icon;
@@ -632,75 +608,86 @@
             tg.HapticFeedback.impactOccurred('medium'); 
         });
 
-        // --- IMPROVED TASK SYSTEM ---
-        window.doTask = (k, r, url, btnId) => {
-            const btn = document.getElementById(btnId);
-            
-            // 1. Start Task
-            if(btn.innerText === "Start") {
-                tg.openLink(url);
-                btn.innerText = "Checking...";
-                btn.classList.add("checking");
-                
-                // Simulate verification delay
-                setTimeout(() => {
-                    btn.innerText = "Claim";
-                    btn.classList.remove("checking");
-                    btn.classList.add("claim");
-                    btn.onclick = () => claimTask(k, r, btnId); // Rebind click
-                }, 5000);
-            }
-        };
+        window.doT = (k, r, url) => {
+            const isDone = user.completedTasks.includes(k);
+            if (isDone) { tg.openLink(url); return; }
+            tg.openLink(url);
+            setTimeout(()=>{ 
+                if(confirm('Mission Complete?')){ 
+                    user.score+=r; 
+                    user.completedTasks.push(k); 
+                    saveUser(); loadTasks(); updateUI(); 
+                    tg.showAlert("Reward Claimed!");
+                } 
+            },3000);
+        }
 
-        window.claimTask = (k, r, btnId) => {
-            user.score += r;
-            user.completedTasks.push(k);
-            saveUser();
-            
-            const btn = document.getElementById(btnId);
-            btn.innerText = "Visited";
-            btn.className = "task-btn done";
-            btn.onclick = null;
-            
-            updateUI();
-            tg.showAlert("Reward Claimed!");
-        };
-
+        // --- FIXED TASK LOGIC ---
         async function initDefaultTasks() {
-             const s=await get(ref(db,'tasks'));
-             if(!s.exists()) set(ref(db,'tasks'), {
-                 t1: { title: "Join Community", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png", url: "https://t.me/soltapcoin" },
-                 t2: { title: "Follow X", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png", url: "https://twitter.com" }
-             });
+             try {
+                 const s = await get(ref(db,'tasks'));
+                 if(!s.exists()) {
+                     await set(ref(db,'tasks'), DEFAULT_TASKS);
+                 }
+             } catch(e) {
+                 console.log("Task Init Error (using fallback)");
+             }
         }
 
         async function loadTasks() {
-            const s=await get(ref(db,'tasks')); 
-            const l=document.getElementById('task-list'); 
+            const l = document.getElementById('task-list'); 
             l.innerHTML='';
-            if(s.exists()) {
-                const t=s.val();
-                Object.keys(t).forEach(k=>{
-                    const done=user.completedTasks.includes(k);
-                    const btnId = `task-btn-${k}`;
-                    
-                    let btnHtml = '';
-                    if(done) {
-                        btnHtml = `<button class="task-btn done">Visited</button>`;
-                    } else {
-                        btnHtml = `<button id="${btnId}" class="task-btn" onclick="doTask('${k}',${t[k].reward}, '${t[k].url}', '${btnId}')">Start</button>`;
-                    }
+            
+            let t = DEFAULT_TASKS; // Start with fallback
+            try {
+                const s = await get(ref(db,'tasks')); 
+                if(s.exists()) t = s.val();
+            } catch(e) { console.log("DB Read Error"); }
 
-                    l.innerHTML+=`
-                    <div class="glass-panel task-item">
-                        <img src="${t[k].img}" class="task-img">
-                        <div style="flex:1;">
-                            <div style="font-weight:bold">${t[k].title}</div>
-                            <div style="color:var(--sol-green);font-size:12px">+${t[k].reward}</div>
-                        </div>
-                        ${btnHtml}
-                    </div>`;
+            Object.keys(t).forEach(k=>{
+                const done=user.completedTasks.includes(k);
+                l.innerHTML+=`
+                <div class="glass-panel task-item">
+                    <img src="${t[k].img}" class="task-img">
+                    <div style="flex:1;">
+                        <div style="font-weight:bold">${t[k].title}</div>
+                        <div style="color:var(--sol-green);font-size:12px">+${t[k].reward}</div>
+                    </div>
+                    <button class="task-btn ${done?'done':''}" onclick="doT('${k}',${t[k].reward}, '${t[k].url}')">
+                        ${done ? 'Visited' : 'Start'}
+                    </button>
+                </div>`;
+            });
+        }
+
+        // --- PERFECTED BOOST SYSTEM ---
+        window.buyBot = () => {
+            if (user.autoMiner >= 10) {
+                tg.showAlert("Max Level Reached!");
+                return;
+            }
+            if (user.score >= 1000) {
+                showAd('rewarded').then(() => {
+                    user.score -= 1000;
+                    user.autoMiner++;
+                    saveUser();
+                    updateUI();
+                    tg.showAlert("Success! Auto-Bot Upgraded.");
+                }).catch(() => {
+                    tg.showAlert("Ad failed. Try again.");
                 });
+            } else {
+                tg.showAlert("Need 1000 Coins to upgrade!");
+            }
+        }
+        
+        // --- FIXED AUTO MINER ---
+        function autoMine(){
+            if(isIdle) return; // Paused if idle
+            if(user.autoMiner > 0){
+                user.score += user.autoMiner;
+                // Only update UI, don't save every second to save bandwidth
+                updateUI();
             }
         }
         
