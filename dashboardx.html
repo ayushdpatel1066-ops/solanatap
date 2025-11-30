@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tycoon Admin Dashboard</title>
+    
+    <!-- Firebase SDKs (Same as Game) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --card-bg: #111;
+            --gold-primary: #FFD700;
+            --text-white: #ffffff;
+            --text-gray: #888;
+            --danger: #ff4d4d;
+            --success: #14F195;
+            --border: 1px solid #333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- LOGIN OVERLAY --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .login-box {
+            background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--gold-primary); text-align: center; width: 300px;
+        }
+        .admin-inp {
+            width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 6px;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--card-bg); border-bottom: var(--border);
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .brand { font-family: 'Chakra Petch', sans-serif; font-size: 20px; color: var(--gold-primary); font-weight: bold; }
+        .refresh-btn {
+            background: #222; border: 1px solid #444; color: white; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        .refresh-btn:hover { background: #333; }
+
+        /* --- STATS GRID --- */
+        .stats-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px; padding: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg); border: var(--border); padding: 15px; border-radius: 10px;
+        }
+        .stat-label { font-size: 12px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-family: 'Chakra Petch', sans-serif; font-size: 24px; font-weight: bold; margin-top: 5px; color: white; }
+
+        /* --- TABLE AREA --- */
+        .table-wrapper {
+            padding: 0 20px 20px; flex: 1; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .table-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .search-bar {
+            flex: 1; padding: 10px; background: var(--card-bg); border: var(--border); color: white; border-radius: 6px;
+        }
+        
+        .table-scroll {
+            overflow-x: auto; background: var(--card-bg); border-radius: 10px; border: var(--border);
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 12px; background: #1a1a1a; color: var(--text-gray); font-size: 12px; text-transform: uppercase; position: sticky; top: 0; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
+        tr:hover { background: #151515; }
+        
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .avatar-mini { width: 24px; height: 24px; background: var(--gold-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; font-size: 12px; font-weight: bold; }
+        
+        /* ACTIONS */
+        .btn-sm { padding: 4px 8px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; }
+        .btn-edit { background: #222; color: var(--gold-primary); border: 1px solid var(--gold-primary); }
+        .btn-ban { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        
+        /* EDIT MODAL */
+        #edit-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: #111; padding: 20px; width: 90%; max-width: 350px; border-radius: 12px; border: 1px solid #333;
+        }
+        .modal-label { display: block; margin-top: 10px; font-size: 12px; color: #888; }
+
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="color:var(--gold-primary); margin-bottom:10px;">ADMIN ACCESS</h2>
+            <input type="password" id="admin-pass" class="admin-inp" placeholder="Enter Password">
+            <button onclick="checkAdmin()" class="refresh-btn" style="width:100%; background:var(--gold-primary); color:black; font-weight:bold;">LOGIN</button>
+            <p id="login-err" style="color:red; font-size:12px; margin-top:5px;"></p>
+        </div>
+    </div>
+
+    <header>
+        <div class="brand">Tycoon Dashboard</div>
+        <button class="refresh-btn" onclick="fetchData()">🔄 Refresh Data</button>
+    </header>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value" id="stat-users">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Coins in Circulation</div>
+            <div class="stat-value" style="color:var(--gold-primary)" id="stat-coins">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pending SOL</div>
+            <div class="stat-value" style="color:#9945FF" id="stat-sol">0.00</div>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <div class="table-controls">
+            <input type="text" id="search-inp" class="search-bar" placeholder="Search by Name or ID..." onkeyup="filterTable()">
+        </div>
+        <div class="table-scroll">
+            <table id="user-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Coins</th>
+                        <th>SOL Balance</th>
+                        <th>Level/XP</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Rows generated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- EDIT USER MODAL -->
+    <div id="edit-modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom:15px;">Edit User</h3>
+            <input type="hidden" id="edit-uid">
+            
+            <label class="modal-label">Username</label>
+            <input type="text" id="edit-name" class="admin-inp">
+
+            <label class="modal-label">Coins</label>
+            <input type="number" id="edit-coins" class="admin-inp">
+            
+            <label class="modal-label">SOL Balance</label>
+            <input type="number" id="edit-sol" class="admin-inp" step="0.0001">
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="saveUserEdit()" class="refresh-btn" style="flex:1; background:var(--success); color:black; border:none;">SAVE</button>
+                <button onclick="document.getElementById('edit-modal').style.display='none'" class="refresh-btn" style="flex:1;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. FIREBASE CONFIG (MUST MATCH GAME) ---
+        const firebaseConfig = { apiKey: "AIzaSyB5gIPpuzMJG_Ns59vzG8kITNlcf_k1guw", authDomain: "japear-c00aa.firebaseapp.com", projectId: "japear-c00aa", storageBucket: "japear-c00aa.firebasestorage.app", messagingSenderId: "624280269067", appId: "1:624280269067:web:440dc99a3b9710a6eef20e", databaseURL: "https://japear-c00aa-default-rtdb.firebaseio.com/" };
+        
+        try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error(e); }
+        const db = firebase.database();
+
+        let allUsers = [];
+
+        // --- 2. ADMIN AUTH ---
+        function checkAdmin() {
+            const p = document.getElementById('admin-pass').value;
+            // SIMPLE PASSWORD CHECK (Change this!)
+            if(p === 'admin123') {
+                document.getElementById('login-overlay').style.display = 'none';
+                fetchData();
+            } else {
+                document.getElementById('login-err').innerText = 'Invalid Password';
+            }
+        }
+
+        // --- 3. HELPER FUNCTIONS ---
+        const fmt = (num) => {
+            if(num >= 1000000) return (num/1000000).toFixed(2) + 'M';
+            if(num >= 1000) return (num/1000).toFixed(1) + 'k';
+            return Math.floor(num).toLocaleString();
+        };
+
+        // --- 4. FETCH DATA ---
+        function fetchData() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading data...</td></tr>';
+
+            db.ref('users').once('value', (snapshot) => {
+                allUsers = [];
+                let totalCoins = 0;
+                let totalSol = 0;
+                
+                snapshot.forEach(child => {
+                    const uid = child.key;
+                    const data = child.val();
+                    const uObj = {
+                        uid: uid,
+                        name: data.name || 'Unknown',
+                        coins: data.coins || 0,
+                        sol: data.sol || 0,
+                        xp: data.xp || 0
+                    };
+                    allUsers.push(uObj);
+                    totalCoins += uObj.coins;
+                    totalSol += uObj.sol;
+                });
+
+                // Sort by Coins descending
+                allUsers.sort((a, b) => b.coins - a.coins);
+
+                // Update Stats
+                document.getElementById('stat-users').innerText = allUsers.length;
+                document.getElementById('stat-coins').innerText = fmt(totalCoins);
+                document.getElementById('stat-sol').innerText = totalSol.toFixed(4);
+
+                renderTable(allUsers);
+            });
+        }
+
+        // --- 5. RENDER TABLE ---
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if(data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No users found.</td></tr>';
+                return;
+            }
+
+            data.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="user-cell">
+                            <div class="avatar-mini">${u.name.substring(0,1).toUpperCase()}</div>
+                            <div>
+                                <div style="font-weight:bold;">${u.name}</div>
+                                <div style="font-size:10px; color:#666;">${u.uid.substring(0,8)}...</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color:var(--gold-primary); font-family:'Chakra Petch'">${fmt(u.coins)}</td>
+                    <td style="color:#9945FF; font-family:'Chakra Petch'">${u.sol.toFixed(4)}</td>
+                    <td>${fmt(u.xp)} XP</td>
+                    <td>
+                        <button class="btn-sm btn-edit" onclick="openEdit('${u.uid}')">EDIT</button>
+                        <button class="btn-sm btn-ban" onclick="deleteUser('${u.uid}')">DEL</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 6. FILTER ---
+        function filterTable() {
+            const term = document.getElementById('search-inp').value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                u.name.toLowerCase().includes(term) || u.uid.toLowerCase().includes(term)
+            );
+            renderTable(filtered);
+        }
+
+        // --- 7. ACTIONS (EDIT / DELETE) ---
+        function deleteUser(uid) {
+            if(confirm("Are you sure you want to PERMANENTLY delete this user? This cannot be undone.")) {
+                db.ref('users/' + uid).remove()
+                .then(() => { alert('User deleted'); fetchData(); })
+                .catch(e => alert(e.message));
+            }
+        }
+
+        function openEdit(uid) {
+            const u = allUsers.find(x => x.uid === uid);
+            if(!u) return;
+
+            document.getElementById('edit-uid').value = uid;
+            document.getElementById('edit-name').value = u.name;
+            document.getElementById('edit-coins').value = Math.floor(u.coins);
+            document.getElementById('edit-sol').value = u.sol;
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function saveUserEdit() {
+            const uid = document.getElementById('edit-uid').value;
+            const newName = document.getElementById('edit-name').value;
+            const newCoins = parseFloat(document.getElementById('edit-coins').value);
+            const newSol = parseFloat(document.getElementById('edit-sol').value);
+
+            if(!uid) return;
+
+            db.ref('users/' + uid).update({
+                name: newName,
+                coins: newCoins,
+                sol: newSol
+            }).then(() => {
+                document.getElementById('edit-modal').style.display = 'none';
+                fetchData(); // Refresh list
+            }).catch(e => alert(e.message));
+        }
+
+    </script>
+</body>
+</html>
