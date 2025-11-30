@@ -3,421 +3,459 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tycoon Admin Dashboard</title>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <title>Solana Miner Admin Dashboard</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+    <!-- CSS LIBRARIES -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- SWEETALERT FOR POPUPS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root {
-            --bg-dark: #050505;
-            --card-bg: #111;
-            --gold-primary: #FFD700;
-            --text-white: #ffffff;
-            --text-gray: #888;
-            --danger: #ff4d4d;
-            --success: #14F195;
-            --border: 1px solid #333;
+            --sol-green: #14F195;
+            --sol-purple: #9945FF;
+            --bg-dark: #090909;
+            --card-bg: #141414;
+            --border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Outfit', sans-serif;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
 
         body {
             background-color: var(--bg-dark);
-            color: var(--text-white);
-            font-family: 'Outfit', sans-serif;
+            color: #ffffff;
+            font-family: var(--font-main);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
-        /* --- LOGIN OVERLAY --- */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 999;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-        }
-        .login-box {
-            background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--gold-primary); text-align: center; width: 300px;
-        }
-        .admin-inp {
-            width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 6px;
+        /* --- DASHBOARD UI --- */
+        .sidebar {
+            height: 100vh;
+            background: #000;
+            border-right: 1px solid var(--border);
+            position: fixed;
+            width: 250px;
+            padding: 20px;
         }
 
-        /* --- HEADER --- */
-        header {
-            background: var(--card-bg); border-bottom: var(--border);
-            padding: 15px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
         }
-        .brand { font-family: 'Chakra Petch', sans-serif; font-size: 20px; color: var(--gold-primary); font-weight: bold; }
-        
-        .nav-tabs { display: flex; gap: 10px; }
-        .tab-btn {
-            background: transparent; border: 1px solid #444; color: #888; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;
-        }
-        .tab-btn.active { background: var(--gold-primary); color: #000; border-color: var(--gold-primary); }
 
-        .refresh-btn {
-            background: #222; border: 1px solid #444; color: white; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s;
-        }
-        .refresh-btn:hover { background: #333; }
-
-        /* --- LAYOUTS --- */
-        .view-section { display: none; padding: 20px; animation: fadeIn 0.3s; }
-        .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* --- STATS GRID --- */
-        .stats-container {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px; margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--card-bg); border: var(--border); padding: 15px; border-radius: 10px;
-        }
-        .stat-label { font-size: 12px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; }
-        .stat-value { font-family: 'Chakra Petch', sans-serif; font-size: 24px; font-weight: bold; margin-top: 5px; color: white; }
-
-        /* --- TABLE AREA --- */
-        .table-controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        .search-bar {
-            flex: 1; padding: 10px; background: var(--card-bg); border: var(--border); color: white; border-radius: 6px;
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
         }
         
-        .table-scroll {
-            overflow-x: auto; background: var(--card-bg); border-radius: 10px; border: var(--border);
-        }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { text-align: left; padding: 12px; background: #1a1a1a; color: var(--text-gray); font-size: 12px; text-transform: uppercase; position: sticky; top: 0; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: middle; }
-        tr:hover { background: #151515; }
-        
-        .user-cell { display: flex; align-items: center; gap: 10px; }
-        .avatar-mini { width: 30px; height: 30px; background: var(--gold-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: black; font-size: 14px; font-weight: bold; }
-        
-        .uid-pill { 
-            font-family: monospace; background: #222; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; border: 1px solid #333;
-        }
-        .uid-pill:active { background: var(--gold-primary); color: #000; }
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--sol-purple); }
 
-        /* ACTIONS */
-        .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; margin-right: 5px; font-weight: bold; }
-        .btn-edit { background: #222; color: var(--gold-primary); border: 1px solid var(--gold-primary); }
-        .btn-ban { background: rgba(255, 77, 77, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        
-        /* TASK FORM */
-        .task-create-box {
-            background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px dashed #444; margin-bottom: 20px;
+        .stat-val { font-size: 28px; font-weight: 900; color: white; }
+        .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-icon { font-size: 40px; position: absolute; right: 20px; top: 20px; opacity: 0.2; }
+
+        /* TABLE STYLES */
+        .table-dark {
+            background-color: transparent;
+            --bs-table-bg: transparent;
         }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
-        @media(max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+        .table-dark th {
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid var(--border);
+        }
+        .table-dark td {
+            color: #eee;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        .user-row:hover { background: rgba(255,255,255,0.02); }
+
+        /* BADGES */
+        .badge-rank { padding: 5px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; }
+        .rank-bronze { background: rgba(205, 127, 50, 0.2); color: #cd7f32; border: 1px solid #cd7f32; }
+        .rank-silver { background: rgba(192, 192, 192, 0.2); color: #c0c0c0; border: 1px solid #c0c0c0; }
+        .rank-gold { background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid #ffd700; }
+        .rank-plat { background: rgba(229, 228, 226, 0.2); color: #e5e4e2; border: 1px solid #e5e4e2; }
 
         /* MODAL */
-        #edit-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
-            display: none; justify-content: center; align-items: center; z-index: 100;
-        }
         .modal-content {
-            background: #111; padding: 20px; width: 90%; max-width: 350px; border-radius: 12px; border: 1px solid #333;
+            background-color: #1a1a1a;
+            border: 1px solid var(--sol-green);
+            color: white;
         }
-        .modal-label { display: block; margin-top: 10px; font-size: 12px; color: #888; }
+        .modal-header { border-bottom: 1px solid #333; }
+        .modal-footer { border-top: 1px solid #333; }
+        .detail-group { background: #111; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; }
+        .detail-label { color: #888; font-size: 11px; }
+        .detail-val { font-weight: bold; color: var(--sol-green); }
+
+        /* SEARCH */
+        .search-input {
+            background: #111; border: 1px solid #333; color: white; padding: 10px 15px; border-radius: 30px; width: 300px;
+        }
+        .search-input:focus { background: #111; color: white; border-color: var(--sol-green); outline: none; }
+
+        /* LOADING */
+        #loader {
+            position: fixed; inset: 0; background: black; z-index: 9999; display: flex; justify-content: center; align-items: center;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid #333; border-top-color: var(--sol-green); border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
     </style>
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2 style="color:var(--gold-primary); margin-bottom:10px;">ADMIN ACCESS</h2>
-            <input type="password" id="admin-pass" class="admin-inp" placeholder="Enter Password">
-            <button onclick="checkAdmin()" class="refresh-btn" style="width:100%; background:var(--gold-primary); color:black; font-weight:bold;">LOGIN</button>
-            <p id="login-err" style="color:red; font-size:12px; margin-top:5px;"></p>
+    <!-- LOADER -->
+    <div id="loader"><div class="spinner"></div></div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar d-none d-md-block">
+        <h4 class="mb-5" style="color: var(--sol-green); font-weight: 900;">
+            <i class="ri-dashboard-3-fill"></i> ADMIN
+        </h4>
+        <div style="color: #666; font-size: 12px; margin-bottom: 10px;">MENU</div>
+        <ul class="list-unstyled">
+            <li class="mb-3"><a href="#" class="text-white text-decoration-none"><i class="ri-user-line me-2"></i> Users</a></li>
+            <li class="mb-3"><a href="#" class="text-white-50 text-decoration-none"><i class="ri-settings-4-line me-2"></i> Settings (Demo)</a></li>
+        </ul>
+        <div style="position: absolute; bottom: 20px; color: #444; font-size: 11px;">
+            Database: Firebase<br>Ver: 1.0.2
         </div>
     </div>
 
-    <header>
-        <div class="brand">Tycoon Dashboard</div>
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('users')" id="tab-users">Users</button>
-            <button class="tab-btn" onclick="switchTab('tasks')" id="tab-tasks">Task System</button>
-        </div>
-        <button class="refresh-btn" onclick="refreshAll()">🔄 Refresh</button>
-    </header>
-
-    <!-- USER MANAGEMENT VIEW -->
-    <div id="view-users" class="view-section active">
-        <div class="stats-container">
-            <div class="stat-card">
-                <div class="stat-label">Total Users</div>
-                <div class="stat-value" id="stat-users">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Coins Circulating</div>
-                <div class="stat-value" style="color:var(--gold-primary)" id="stat-coins">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Pending SOL</div>
-                <div class="stat-value" style="color:#9945FF" id="stat-sol">0.00</div>
-            </div>
-        </div>
-
-        <div class="table-controls">
-            <input type="text" id="search-inp" class="search-bar" placeholder="Search by Name or ID..." onkeyup="filterTable()">
-        </div>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
         
-        <div class="table-scroll">
-            <table id="user-table">
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>User ID (UID)</th>
-                        <th>Coins</th>
-                        <th>SOL Balance</th>
-                        <th>Level</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- TASK SYSTEM VIEW -->
-    <div id="view-tasks" class="view-section">
-        <h3 style="margin-bottom:15px; color:var(--gold-primary)">Create New Task</h3>
-        <div class="task-create-box">
-            <div class="form-grid">
-                <div>
-                    <label class="modal-label">Task Description</label>
-                    <input type="text" id="new-task-txt" class="admin-inp" placeholder="e.g. Join Telegram">
+        <!-- TOP STATS -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-val" id="total-users">0</div>
+                    <i class="ri-group-fill stat-icon" style="color: var(--sol-purple);"></i>
                 </div>
-                <div>
-                    <label class="modal-label">Reward (Coins)</label>
-                    <input type="number" id="new-task-rwd" class="admin-inp" placeholder="5000">
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">Total Coins Mined</div>
+                    <div class="stat-val" id="total-coins">0</div>
+                    <i class="ri-coin-fill stat-icon" style="color: var(--sol-green);"></i>
                 </div>
-                <div>
-                    <label class="modal-label">Link URL</label>
-                    <input type="text" id="new-task-url" class="admin-inp" placeholder="https://...">
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">Avg. Auto Miner Lvl</div>
+                    <div class="stat-val" id="avg-bot">0</div>
+                    <i class="ri-robot-2-fill stat-icon" style="color: cyan;"></i>
                 </div>
-                <button onclick="addTask()" class="refresh-btn" style="background:var(--success); color:black; font-weight:bold; height:42px;">+ ADD TASK</button>
             </div>
         </div>
 
-        <h3 style="margin-bottom:15px; color:white;">Active Tasks</h3>
-        <div class="table-scroll">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th>Reward</th>
-                        <th>Link</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="task-body"></tbody>
-            </table>
+        <!-- TABLE SECTION -->
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="m-0">User Database</h5>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search ID or Username..." onkeyup="filterTable()">
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-dark table-hover" id="userTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Rank</th>
+                            <th>Balance</th>
+                            <th>Energy</th>
+                            <th>Bot Lvl</th>
+                            <th>Last Active (Claim)</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Data Injected Here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="no-data" class="text-center py-5 text-muted" style="display:none;">No users found matching query.</div>
         </div>
     </div>
 
-    <!-- EDIT USER MODAL -->
-    <div id="edit-modal">
-        <div class="modal-content">
-            <h3 style="margin-bottom:15px;">Edit User</h3>
-            <input type="hidden" id="edit-uid">
-            
-            <label class="modal-label">Username</label>
-            <input type="text" id="edit-name" class="admin-inp">
+    <!-- USER DETAIL MODAL -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">User Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="detail-group">
+                                <div class="detail-label">USERNAME</div>
+                                <div class="detail-val text-white" id="m-username">...</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="detail-group">
+                                <div class="detail-label">USER ID</div>
+                                <div class="detail-val text-white" id="m-id" style="font-size:10px;">...</div>
+                            </div>
+                        </div>
+                    </div>
 
-            <label class="modal-label">Coins</label>
-            <input type="number" id="edit-coins" class="admin-inp">
-            
-            <label class="modal-label">SOL Balance</label>
-            <input type="number" id="edit-sol" class="admin-inp" step="0.0001">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="detail-group">
+                                <div class="detail-label">BALANCE</div>
+                                <div class="detail-val" id="m-score" style="font-size: 18px;">0</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="detail-group">
+                                <div class="detail-label">ENERGY</div>
+                                <div class="detail-val text-warning" id="m-energy">0/0</div>
+                            </div>
+                        </div>
+                    </div>
 
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button onclick="saveUserEdit()" class="refresh-btn" style="flex:1; background:var(--success); color:black; border:none;">SAVE</button>
-                <button onclick="document.getElementById('edit-modal').style.display='none'" class="refresh-btn" style="flex:1;">CANCEL</button>
+                    <div class="detail-group">
+                        <div class="detail-label">TASKS COMPLETED</div>
+                        <div class="detail-val text-white" id="m-tasks" style="font-weight: normal; font-size: 12px;">None</div>
+                    </div>
+
+                    <div class="detail-group">
+                        <div class="detail-label">MAGIC AD CLAIMS (Timestamps)</div>
+                        <div class="detail-val text-white" id="m-ads" style="font-weight: normal; font-size: 11px; font-family: monospace;">
+                            Slot 1: Never<br>Slot 2: Never
+                        </div>
+                    </div>
+
+                    <div class="detail-group">
+                        <div class="detail-label">LAST MINI BONUS</div>
+                        <div class="detail-val text-white" id="m-mini">Never</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteUser()">Delete User</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // CONFIG
-        const firebaseConfig = { apiKey: "AIzaSyB5gIPpuzMJG_Ns59vzG8kITNlcf_k1guw", authDomain: "japear-c00aa.firebaseapp.com", projectId: "japear-c00aa", storageBucket: "japear-c00aa.firebasestorage.app", messagingSenderId: "624280269067", appId: "1:624280269067:web:440dc99a3b9710a6eef20e", databaseURL: "https://japear-c00aa-default-rtdb.firebaseio.com/" };
-        try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error(e); }
-        const db = firebase.database();
+    <!-- FIREBASE LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // SAME CONFIG AS MINER APP
+        const firebaseConfig = {
+            apiKey: "AIzaSyAhyInLPhouHDZCPML-AvfOcns2Li9tWmM",
+            authDomain: "facelyze.firebaseapp.com",
+            databaseURL: "https://facelyze-default-rtdb.firebaseio.com",
+            projectId: "facelyze",
+            storageBucket: "facelyze.firebasestorage.app",
+            messagingSenderId: "814580139011",
+            appId: "1:814580139011:web:55ad90f052e7de32d93a36",
+            measurementId: "G-4GZYKL9QWG"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
         let allUsers = [];
-        let allTasks = [];
+        let selectedUserId = null;
 
-        // --- AUTH ---
-        function checkAdmin() {
-            if(document.getElementById('admin-pass').value === 'admin123') {
-                document.getElementById('login-overlay').style.display = 'none';
-                refreshAll();
-            } else {
-                document.getElementById('login-err').innerText = 'Invalid Password';
+        // --- FETCH DATA ---
+        async function loadData() {
+            try {
+                const snapshot = await get(ref(db, 'sol_users'));
+                if (snapshot.exists()) {
+                    allUsers = [];
+                    let totalCoins = 0;
+                    let totalBot = 0;
+
+                    snapshot.forEach(child => {
+                        const u = child.val();
+                        u.key = child.key; // Store ID
+                        allUsers.push(u);
+                        
+                        totalCoins += (u.score || 0);
+                        totalBot += (u.autoMiner || 0);
+                    });
+
+                    // Update Stats
+                    document.getElementById('total-users').innerText = allUsers.length;
+                    document.getElementById('total-coins').innerText = Math.floor(totalCoins).toLocaleString();
+                    document.getElementById('avg-bot').innerText = (allUsers.length > 0 ? (totalBot / allUsers.length).toFixed(1) : 0);
+
+                    // Sort by Score (High to Low)
+                    allUsers.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+                    renderTable(allUsers);
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire("Error", "Failed to load database.", "error");
             }
+            document.getElementById('loader').style.display = 'none';
         }
 
-        // --- TABS ---
-        function switchTab(tab) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById('view-'+tab).classList.add('active');
-            document.getElementById('tab-'+tab).classList.add('active');
-        }
-
-        function refreshAll() {
-            fetchUsers();
-            fetchTasks();
-        }
-
-        // --- USERS LOGIC ---
-        function fetchUsers() {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading...</td></tr>';
-
-            db.ref('users').once('value', (snapshot) => {
-                allUsers = [];
-                let totalCoins = 0, totalSol = 0;
-                
-                snapshot.forEach(child => {
-                    const d = child.val();
-                    const uObj = { uid: child.key, name: d.name || 'Unknown', coins: d.coins || 0, sol: d.sol || 0, xp: d.xp || 0 };
-                    allUsers.push(uObj);
-                    totalCoins += uObj.coins;
-                    totalSol += uObj.sol;
-                });
-
-                allUsers.sort((a, b) => b.coins - a.coins);
-                
-                document.getElementById('stat-users').innerText = allUsers.length;
-                document.getElementById('stat-coins').innerText = fmt(totalCoins);
-                document.getElementById('stat-sol').innerText = totalSol.toFixed(4);
-                renderUserTable(allUsers);
-            });
-        }
-
-        function renderUserTable(data) {
+        // --- RENDER TABLE ---
+        window.renderTable = (data) => {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
-            if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No users found.</td></tr>'; return; }
+
+            if(data.length === 0) {
+                document.getElementById('no-data').style.display = 'block';
+                return;
+            }
+            document.getElementById('no-data').style.display = 'none';
 
             data.forEach(u => {
+                // Determine Rank
+                let rankBadge = '<span class="badge-rank rank-bronze">Bronze</span>';
+                const s = u.score || 0;
+                if(s > 100000) rankBadge = '<span class="badge-rank rank-plat">Platinum</span>';
+                else if(s > 25000) rankBadge = '<span class="badge-rank rank-gold">Gold</span>';
+                else if(s > 5000) rankBadge = '<span class="badge-rank rank-silver">Silver</span>';
+
+                // Format Time (Last Mini Claim is a good proxy for activity)
+                let lastActive = "Unknown";
+                if(u.lastMiniClaim) {
+                    const d = new Date(u.lastMiniClaim);
+                    lastActive = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+
                 const tr = document.createElement('tr');
+                tr.className = 'user-row';
                 tr.innerHTML = `
                     <td>
-                        <div class="user-cell">
-                            <div class="avatar-mini">${u.name.substring(0,1).toUpperCase()}</div>
-                            <strong>${u.name}</strong>
+                        <div class="d-flex align-items-center">
+                            <div style="width:30px; height:30px; background:#333; border-radius:50%; display:flex; justify-content:center; align-items:center; margin-right:10px; font-size:12px;">
+                                <i class="ri-user-fill"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:bold; font-size:14px;">${u.username || "Guest"}</div>
+                                <div style="font-size:10px; color:#666;">${u.key}</div>
+                            </div>
                         </div>
                     </td>
-                    <td><span class="uid-pill" onclick="copyToClip('${u.uid}')" title="Click to Copy">${u.uid}</span></td>
-                    <td style="color:var(--gold-primary)">${fmt(u.coins)}</td>
-                    <td style="color:#9945FF">${u.sol.toFixed(4)}</td>
-                    <td>${Math.floor(Math.sqrt(u.xp/500))+1}</td>
-                    <td>
-                        <button class="btn-sm btn-edit" onclick="openEdit('${u.uid}')">EDIT</button>
-                        <button class="btn-sm btn-ban" onclick="deleteUser('${u.uid}')">DEL</button>
+                    <td>${rankBadge}</td>
+                    <td style="color:var(--sol-green); font-weight:bold;">${Math.floor(s).toLocaleString()}</td>
+                    <td>${u.energy || 0}/${u.maxEnergy || 200}</td>
+                    <td><i class="ri-robot-2-line"></i> ${u.autoMiner || 0}</td>
+                    <td style="font-size:12px; color:#aaa;">${lastActive}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-light" onclick="viewUser('${u.key}')">View</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- TASKS LOGIC ---
-        function fetchTasks() {
-            const tbody = document.getElementById('task-body');
-            db.ref('system_tasks').once('value', (s) => {
-                tbody.innerHTML = '';
-                if(!s.exists()) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No tasks active.</td></tr>'; return; }
-                
-                s.forEach(child => {
-                    const t = child.val();
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${t.txt}</td>
-                        <td style="color:var(--gold-primary)">+${fmt(t.rwd)}</td>
-                        <td><a href="${t.url}" target="_blank" style="color:#aaa;">Link ↗</a></td>
-                        <td><button class="btn-sm btn-ban" onclick="deleteTask('${child.key}')">REMOVE</button></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            });
+        // --- FILTER ---
+        window.filterTable = () => {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                (u.username && u.username.toLowerCase().includes(q)) || 
+                u.key.toLowerCase().includes(q)
+            );
+            renderTable(filtered);
         }
 
-        function addTask() {
-            const txt = document.getElementById('new-task-txt').value;
-            const rwd = parseInt(document.getElementById('new-task-rwd').value);
-            const url = document.getElementById('new-task-url').value;
-
-            if(!txt || !rwd || !url) return alert("Fill all fields");
-
-            db.ref('system_tasks').push({ txt, rwd, url })
-            .then(() => {
-                alert("Task Live!");
-                document.getElementById('new-task-txt').value = '';
-                document.getElementById('new-task-rwd').value = '';
-                document.getElementById('new-task-url').value = '';
-                fetchTasks();
-            });
-        }
-
-        function deleteTask(key) {
-            if(confirm("Delete this task?")) {
-                db.ref('system_tasks/'+key).remove().then(fetchTasks);
-            }
-        }
-
-        // --- HELPERS & ACTIONS ---
-        function copyToClip(text) {
-            navigator.clipboard.writeText(text).then(() => alert("UID Copied: " + text));
-        }
-
-        function openEdit(uid) {
-            const u = allUsers.find(x => x.uid === uid);
+        // --- VIEW DETAIL LOGIC ---
+        window.viewUser = (id) => {
+            const u = allUsers.find(x => x.key === id);
             if(!u) return;
-            document.getElementById('edit-uid').value = uid;
-            document.getElementById('edit-name').value = u.name;
-            document.getElementById('edit-coins').value = Math.floor(u.coins);
-            document.getElementById('edit-sol').value = u.sol;
-            document.getElementById('edit-modal').style.display = 'flex';
-        }
 
-        function saveUserEdit() {
-            const uid = document.getElementById('edit-uid').value;
-            db.ref('users/' + uid).update({
-                name: document.getElementById('edit-name').value,
-                coins: parseFloat(document.getElementById('edit-coins').value),
-                sol: parseFloat(document.getElementById('edit-sol').value)
-            }).then(() => {
-                document.getElementById('edit-modal').style.display = 'none';
-                fetchUsers();
+            selectedUserId = id;
+            document.getElementById('m-username').innerText = u.username || "Guest";
+            document.getElementById('m-id').innerText = u.key;
+            document.getElementById('m-score').innerText = (u.score || 0).toLocaleString();
+            document.getElementById('m-energy').innerText = `${u.energy || 0} / ${u.maxEnergy || 200}`;
+            
+            // Tasks
+            if(u.completedTasks && Array.isArray(u.completedTasks) && u.completedTasks.length > 0) {
+                document.getElementById('m-tasks').innerText = u.completedTasks.join(", ");
+            } else {
+                document.getElementById('m-tasks').innerText = "No tasks completed";
+            }
+
+            // Ads
+            let adHtml = "";
+            const claims = u.adClaims || [0,0,0,0];
+            claims.forEach((ts, index) => {
+                let timeStr = "Never";
+                if(ts > 0) {
+                    const d = new Date(ts);
+                    timeStr = d.toLocaleTimeString();
+                }
+                adHtml += `Slot ${index+1}: <span style="color:#aaa">${timeStr}</span><br>`;
             });
+            document.getElementById('m-ads').innerHTML = adHtml;
+
+            // Mini Bonus
+            if(u.lastMiniClaim) {
+                document.getElementById('m-mini').innerText = new Date(u.lastMiniClaim).toLocaleString();
+            } else {
+                document.getElementById('m-mini').innerText = "Never";
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+            modal.show();
         }
 
-        function deleteUser(uid) {
-            if(confirm("Permanently delete user?")) {
-                db.ref('users/' + uid).remove().then(fetchUsers);
+        // --- DELETE USER ---
+        window.deleteUser = async () => {
+            if(!selectedUserId) return;
+            
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    await remove(ref(db, 'sol_users/' + selectedUserId));
+                    Swal.fire('Deleted!', 'User has been removed.', 'success');
+                    
+                    // Close modal and reload
+                    const modalEl = document.getElementById('detailModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                    loadData();
+                } catch (e) {
+                    Swal.fire('Error', 'Could not delete user.', 'error');
+                }
             }
         }
 
-        function filterTable() {
-            const term = document.getElementById('search-inp').value.toLowerCase();
-            const filtered = allUsers.filter(u => u.name.toLowerCase().includes(term) || u.uid.toLowerCase().includes(term));
-            renderUserTable(filtered);
-        }
+        // Initialize
+        loadData();
 
-        const fmt = (n) => n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'k' : n.toLocaleString();
+        // Auto Refresh every 10 seconds
+        setInterval(loadData, 10000);
+
     </script>
+
+    <!-- BOOTSTRAP JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
