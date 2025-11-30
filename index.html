@@ -370,20 +370,21 @@
             <div id="lb-list" style="overflow-y: auto; flex: 1; text-align: left;">Loading...</div>
         </div>
     </div>
-
-    <script type="module">
+<script type="module">
+        // 1. WE USE CDN LINKS HERE (Required for HTML files)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // 2. YOUR NEW PRIVATE KEYS
         const firebaseConfig = {
-            apiKey: "AIzaSyAhyInLPhouHDZCPML-AvfOcns2Li9tWmM",
-            authDomain: "facelyze.firebaseapp.com",
-            databaseURL: "https://facelyze-default-rtdb.firebaseio.com",
-            projectId: "facelyze",
-            storageBucket: "facelyze.firebasestorage.app",
-            messagingSenderId: "814580139011",
-            appId: "1:814580139011:web:55ad90f052e7de32d93a36",
-            measurementId: "G-4GZYKL9QWG"
+            apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
+            authDomain: "solanacoin-6d9a8.firebaseapp.com",
+            databaseURL: "https://solanacoin-6d9a8-default-rtdb.firebaseio.com",
+            projectId: "solanacoin-6d9a8",
+            storageBucket: "solanacoin-6d9a8.firebasestorage.app",
+            messagingSenderId: "269025348490",
+            appId: "1:269025348490:web:87c95514a1d86485169673",
+            measurementId: "G-00X84VW123"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -397,11 +398,11 @@
         let user = { 
             id: null, username: "Guest", score: 0, 
             energy: 200, maxEnergy: 200, autoMiner: 0, 
-            adClaims: [0,0,0,0], completedTasks: [], // Changed to 4 slots
+            adClaims: [0,0,0,0], completedTasks: [], 
             lastMiniClaim: 0 
         };
 
-        // MODIFIED: 4 Magic Claim Slots starting from 500
+        // 4 Magic Claim Slots
         const MAGIC_CONFIG = [
             { mins: 5, reward: 500 },
             { mins: 15, reward: 1000 },
@@ -431,13 +432,12 @@
         async function init() {
             initInAppAds();
 
-            // FIXED: Connection Logic to avoid errors if tg.initDataUnsafe is incomplete
             try {
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                     user.id = tg.initDataUnsafe.user.id.toString();
                     user.username = tg.initDataUnsafe.user.first_name || "Miner";
                 } else {
-                    // Fallback for testing or missing ID (avoids crashes)
+                    // Fallback for testing
                     const localId = localStorage.getItem('local_sim_id');
                     if(localId) {
                         user.id = localId;
@@ -500,7 +500,6 @@
                 if (type === 'popup') {
                     show_10254149('pop').then(resolve).catch(reject);
                 } else {
-                    // Standard Reward Interstitial
                     show_10254149().then(resolve).catch(reject);
                 }
             });
@@ -510,14 +509,12 @@
         function setupIdleListeners() {
             const reset = () => { if(!isIdle) idleTimer = 0; };
             const zone = document.getElementById('screen-mine');
-            // Listen for taps/mouse moves on the mine screen
             zone.addEventListener('click', reset);
             zone.addEventListener('touchstart', reset);
             zone.addEventListener('mousemove', reset);
         }
 
         function checkIdle() {
-            // Only check idle if on mine screen and not already idle
             if(document.getElementById('screen-mine').classList.contains('active') && !isIdle && document.getElementById('limit-modal').style.display !== 'flex') {
                 idleTimer++;
                 if(idleTimer >= IDLE_LIMIT) {
@@ -535,12 +532,10 @@
             });
         }
 
-        // --- MINI BONUS LOGIC (MODIFIED: Rewarded Interstitial) ---
         window.claimMiniBonus = () => {
             const now = Date.now();
             if (now - user.lastMiniClaim < 40000) return; 
 
-            // CHANGED: Use 'rewarded' (interstitial) instead of popup
             showAd('rewarded').then(() => {
                 user.score += 200;
                 user.lastMiniClaim = Date.now();
@@ -582,9 +577,8 @@
              document.getElementById('swap-out').innerText = (usdValue / RATES[cur].price).toFixed(6);
         };
 
-        // --- GAMEPLAY ---
         document.getElementById('tap-btn').addEventListener('click', (e) => {
-            if (isIdle) return; // Prevent tapping if idle modal is up
+            if (isIdle) return;
             if (user.energy <= 0) { document.getElementById('limit-modal').style.display = 'flex'; return; }
             
             user.score++; user.energy--; 
@@ -649,13 +643,11 @@
 
         window.buyBot=()=>{ if(user.autoMiner>=10)return; if(user.score>=1000){user.score-=1000;user.autoMiner++;saveUser();updateUI();}else{tg.showAlert("Need 1000 Coin");}}
         
-        // MODIFIED: Stop Auto Mine if Idle
         function autoMine(){
-            if(isIdle) return; // Do not mine if idle
+            if(isIdle) return;
             if(user.autoMiner>0){user.score+=user.autoMiner;updateUI();}
         }
         
-        // MODIFIED: Render 4 Magic Claims with new Rewards
         function renderAds(){ 
             const g=document.getElementById('ad-grid');g.innerHTML='';
             MAGIC_CONFIG.forEach((cfg,i)=>{
@@ -671,7 +663,6 @@
         
         function checkAds(){
             const now=Date.now();
-            // Check Boost Ads
             MAGIC_CONFIG.forEach((cfg,i)=>{
                 const b=document.getElementById(`abtn-${i}`);
                 if(b){
@@ -687,7 +678,6 @@
                 }
             });
             
-            // Check Mini Bonus Button Lock (40s)
             const mb = document.getElementById('mini-btn');
             const diff = now - user.lastMiniClaim;
             if (diff < 40000) {
@@ -702,7 +692,6 @@
         window.claimAd=(i,mins,rew)=>{
             showAd('rewarded').then(()=>{
                 user.score+=rew;
-                // Ensure array size matches
                 if(!user.adClaims) user.adClaims = [0,0,0,0];
                 user.adClaims[i]=Date.now();
                 saveUser();
