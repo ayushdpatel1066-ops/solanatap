@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Solana Miner Premium</title>
-
-    <!-- FONTS -->
+    <title>Offers - Solana Miner</title>
+    
+    <!-- FONTS & ICONS -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
     <!-- SDKS -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://libtl.com/sdk.js" data-zone="10252050" data-sdk="show_10252050"></script>
 
     <style>
         :root {
@@ -27,321 +26,84 @@
 
         body {
             background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(153, 69, 255, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 50% 100%, rgba(20, 241, 149, 0.15) 0%, transparent 50%);
+            background-image: radial-gradient(circle at 50% 0%, rgba(153, 69, 255, 0.2) 0%, transparent 60%);
             color: white;
             font-family: var(--font-main);
             margin: 0; height: 100vh;
-            overflow: hidden; user-select: none;
             display: flex; flex-direction: column;
+            overflow: hidden;
         }
 
-        /* --- GLASS UI --- */
-        .glass-panel {
+        .header {
+            padding: 20px; display: flex; align-items: center; gap: 15px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer;
+        }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 20px;
+        }
+
+        .offer-card {
             background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border);
             border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex; align-items: center; gap: 15px;
         }
 
-        /* --- HEADER --- */
-        .header {
-            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10;
-        }
-        .user-badge {
-            display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px;
-        }
-        .avatar {
-            width: 34px; height: 34px;
-            background: linear-gradient(135deg, var(--sol-green), var(--sol-purple));
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 10px rgba(153, 69, 255, 0.5);
+        .offer-icon {
+            width: 50px; height: 50px; border-radius: 12px; object-fit: cover;
         }
 
-        /* --- SCREENS --- */
-        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
-        .screen.active { display: flex; animation: fadeUp 0.3s ease; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .offer-info { flex: 1; }
+        .offer-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; }
+        .offer-reward { color: var(--sol-green); font-weight: 900; font-size: 14px; }
 
-        /* --- MINE SCREEN --- */
-        .balance-card { text-align: center; margin-bottom: 20px; }
-        .balance-val { 
-            font-size: 58px; font-weight: 900; line-height: 1;
-            background: linear-gradient(to bottom, #fff, #bbb);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            font-family: var(--font-main);
+        .claim-btn {
+            background: white; color: black; border: none;
+            padding: 8px 16px; border-radius: 20px;
+            font-weight: bold; font-size: 12px; cursor: pointer;
         }
-        .balance-lbl { font-size: 13px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-top: 5px; }
+        .claim-btn:active { transform: scale(0.95); }
 
-        .miner-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-        .solana-coin {
-            width: 270px; height: 270px; border-radius: 50%;
-            background: radial-gradient(circle, #1a1a1a, #000);
-            border: 4px solid rgba(153, 69, 255, 0.3);
-            box-shadow: 0 0 80px rgba(153, 69, 255, 0.2);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: transform 0.1s; position: relative; z-index: 5;
-        }
-        .solana-coin img { width: 75%; pointer-events: none; }
-        .solana-coin:active { transform: scale(0.95); border-color: var(--sol-green); }
-
-        /* Energy Bar */
-        .energy-box { margin-top: 20px; }
-        .energy-info { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 5px; }
-        .energy-track { background: #222; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #333; }
-        .energy-fill {
-            height: 100%; width: 100%;
-            background: linear-gradient(90deg, var(--sol-purple), var(--sol-green));
-            transition: width 0.3s ease;
-        }
-
-        /* --- WALLET SCREEN (YOUR PREMIUM THEME) --- */
-        .wallet-card {
-            background: linear-gradient(135deg, var(--sol-purple), #5e28a5);
-            padding: 25px; border-radius: 25px; margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(153, 69, 255, 0.3);
-        }
-        .live-price { font-size: 12px; opacity: 0.8; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
-        .price-up { color: #8aff8a; }
-
-        .swap-container { margin-top: 20px; }
-        .swap-box {
-            background: #111; padding: 15px; border-radius: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            border: 1px solid #333; margin-bottom: 10px;
-        }
-        .swap-icon { width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; }
-        .swap-input { background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; text-align: right; width: 150px; outline: none; font-family: var(--font-main); }
-        
-        .btn-action {
-            width: 100%; padding: 18px; border-radius: 15px; border: none;
-            background: linear-gradient(45deg, var(--sol-green), #0abf70);
-            color: #000; font-weight: 800; font-size: 16px; margin-top: 15px;
-            cursor: pointer;
-        }
-
-        /* --- TASKS --- */
-        .task-item { display: flex; align-items: center; padding: 15px; margin-bottom: 10px; gap: 12px; }
-        .task-img { width: 42px; height: 42px; border-radius: 10px; }
-        .task-btn {
-            background: white; color: black; border: none; padding: 8px 16px;
-            border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer;
-        }
-        .task-btn.done { background: #333; color: #555; pointer-events: none; }
-
-        /* --- BOOST (Magic Icons) --- */
-        .ad-card {
-            padding: 15px; text-align: center; display: flex; flex-direction: column; align-items: center;
-        }
-        .magic-icon { width: 50px; height: 50px; margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--sol-green)); }
-        
-        /* --- LEADERBOARD --- */
-        .lb-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .lb-rank { color: #888; font-weight: bold; width: 30px; font-family: var(--font-main); }
-        .lb-val { color: var(--sol-green); font-weight: bold; display: flex; align-items: center; gap: 5px; font-family: var(--font-main); }
-
-        /* --- MODALS --- */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-            z-index: 999; justify-content: center; align-items: center;
-        }
-        .modal-box {
-            background: #181818; width: 90%; max-width: 360px; padding: 30px;
-            border-radius: 30px; text-align: center; border: 1px solid var(--sol-purple);
-        }
-
-        /* Floating Text */
-        .float-txt {
-            position: absolute; color: white; font-weight: 900; font-size: 32px;
-            pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 10px var(--sol-green); font-family: var(--font-main);
-        }
-        @keyframes floatUp { to { transform: translateY(-120px) scale(1.2); opacity: 0; } }
-
-        /* Nav */
-        .nav-bar {
-            position: fixed; bottom: 20px; left: 20px; right: 20px; height: 75px;
-            display: flex; justify-content: space-between; padding: 0 15px; align-items: center;
-            z-index: 100;
-        }
-        .nav-btn {
-            display: flex; flex-direction: column; align-items: center; color: #666;
-            font-size: 10px; gap: 5px; transition: 0.2s; cursor: pointer; width: 60px;
-        }
-        .nav-btn i { font-size: 24px; }
-        .nav-btn.active { color: white; transform: translateY(-5px); }
-        .nav-btn.active i { color: var(--sol-green); text-shadow: 0 0 15px var(--sol-green); }
-
+        .loader { text-align: center; margin-top: 50px; color: #888; }
     </style>
 </head>
 <body>
 
-    <!-- HEADER -->
     <div class="header">
-        <div class="user-badge glass-panel" style="padding: 6px 12px; border-radius: 30px;">
-            <div class="avatar"><i class="ri-user-star-fill"></i></div>
-            <span id="username" style="margin-left: 8px;">Loading...</span>
-        </div>
-        <div class="glass-panel" onclick="openLeaderboard()" style="padding: 8px 15px; border-radius: 30px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; border-color: gold;">
-            <i class="ri-trophy-fill" style="color: gold;"></i> Leaderboard
-        </div>
+        <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-arrow-left-line"></i></button>
+        <h2 style="margin:0; font-size: 20px;">Special Offers</h2>
     </div>
 
-    <!-- 1. MINE TAB -->
-    <div id="screen-mine" class="screen active">
-        <div class="balance-card">
-            <div class="balance-val" id="score">0</div>
-            <div class="balance-lbl">SOL-BITS MINED</div>
-        </div>
-
-        <div class="miner-area">
-            <div class="solana-coin" id="tap-btn">
-                <img src="https://cryptologos.cc/logos/solana-sol-logo.png?v=029" alt="Solana">
-            </div>
-        </div>
-
-        <div class="energy-box">
-            <div class="energy-info">
-                <span>⚡ Energy</span>
-                <span id="energy-txt">200/200</span>
-            </div>
-            <div class="energy-track">
-                <div class="energy-fill" id="energy-fill"></div>
-            </div>
-            <div style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
-                <i class="ri-flashlight-fill" style="color: var(--sol-purple);"></i> 
-                Auto-Miner: <span id="auto-rate">0</span>/sec
-            </div>
-        </div>
+    <div class="content" id="offer-list">
+        <!-- Offers injected here -->
+        <div class="loader">Loading Offers...</div>
     </div>
 
-    <!-- 2. TASKS TAB (DYNAMIC) -->
-    <div id="screen-tasks" class="screen">
-        <h2 style="margin-bottom: 5px;">Missions</h2>
-        <p style="font-size: 12px; color: #888; margin-bottom: 20px;">Complete tasks to earn huge rewards.</p>
-        <div id="task-list">
-            <div style="text-align:center; padding:20px; color:#666;">Loading Tasks...</div>
-        </div>
-    </div>
-
-    <!-- 3. BOOST TAB -->
-    <div id="screen-boost" class="screen">
-        <h2 style="color: var(--sol-green);">Mining Lab</h2>
-        
-        <!-- Upgrade -->
-        <div class="glass-panel task-item">
-            <div style="font-size: 30px;">🤖</div>
-            <div style="flex: 1;">
-                <div style="font-weight: bold;">Auto-Bot V1</div>
-                <div style="font-size: 12px; color: #888;">Generates 1 coin/sec</div>
-            </div>
-            <button class="task-btn" onclick="buyBot()">Buy 500</button>
-        </div>
-
-        <!-- Ad Grid -->
-        <h3 style="margin-top: 25px;">Magic Claims</h3>
-        <p style="font-size: 11px; color: #888; margin-bottom: 10px;">Claim rewards. Cooldowns apply.</p>
-        <div id="ad-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"></div>
-    </div>
-
-    <!-- 4. WALLET TAB (PREMIUM) -->
-    <div id="screen-wallet" class="screen">
-        <div class="wallet-card">
-            <div style="font-size: 14px; opacity: 0.8;">Total Asset Value</div>
-            <div style="font-size: 38px; font-weight: 900; margin: 5px 0; font-family: var(--font-main);">$<span id="usd-val">0.00</span></div>
-            <div class="live-price">
-                <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="14">
-                1 SOL ≈ $<span id="sol-price">148.50</span> <span class="price-up">(+1.2%)</span>
-            </div>
-        </div>
-
-        <h3 style="margin-bottom: 15px;">Swap</h3>
-        
-        <div class="swap-container">
-            <!-- From -->
-            <div class="swap-box">
-                <div style="display: flex; align-items: center;">
-                    <div style="width:30px; height:30px; background:radial-gradient(circle,#ffd700,#ff8c00); border-radius:50%; display:flex; justify-content:center; align-items:center; margin-right:10px; font-weight:bold; font-size:10px; color:black;">BIT</div>
-                    <div>
-                        <div style="font-size: 10px; color: #888;">From</div>
-                        <div style="font-weight: bold;">SolBits</div>
-                    </div>
-                </div>
-                <div class="swap-input" id="swap-in">0</div>
-            </div>
-
-            <div style="text-align: center; margin: -20px 0; position: relative; z-index: 5;">
-                <i class="ri-arrow-up-down-fill" style="background: #111; padding: 6px; border-radius: 50%; border: 1px solid #333;"></i>
-            </div>
-
-            <!-- To -->
-            <div class="swap-box">
-                <div style="display: flex; align-items: center;">
-                    <img src="https://cryptologos.cc/logos/solana-sol-logo.png" class="swap-icon">
-                    <div>
-                        <div style="font-size: 10px; color: #888;">To</div>
-                        <div style="font-weight: bold;">Solana</div>
-                    </div>
-                </div>
-                <div class="swap-input" id="swap-out" style="color: var(--sol-green);">0.00</div>
-            </div>
-        </div>
-
-        <button class="btn-action" onclick="alert('Withdrawals open in Phase 2!')">
-            Connect Wallet
-        </button>
-    </div>
-
-    <!-- BOTTOM NAV -->
-    <div class="nav-bar glass-panel">
-        <div class="nav-btn active" onclick="nav('mine', this)"><i class="ri-hammer-fill"></i><span>Mine</span></div>
-        <div class="nav-btn" onclick="nav('tasks', this)"><i class="ri-list-check"></i><span>Tasks</span></div>
-        <div class="nav-btn" onclick="nav('boost', this)"><i class="ri-rocket-2-fill"></i><span>Boost</span></div>
-        <div class="nav-btn" onclick="nav('wallet', this)"><i class="ri-wallet-3-fill"></i><span>Wallet</span></div>
-    </div>
-
-    <!-- MODAL: LIMIT REACHED -->
-    <div id="limit-modal" class="modal-overlay">
-        <div class="modal-box">
-            <i class="ri-battery-2-fill" style="font-size: 50px; color: #ff4757;"></i>
-            <h3>Energy Empty!</h3>
-            <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">Watch a short ad to fully recharge your energy.</p>
-            <button class="btn-action" onclick="watchRefillAd()">📺 Watch Ad (Refill)</button>
-        </div>
-    </div>
-
-    <!-- MODAL: LEADERBOARD -->
-    <div id="lb-modal" class="modal-overlay">
-        <div class="modal-box" style="height: 70%; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                <h3 style="margin:0;">🏆 Top Miners</h3>
-                <i class="ri-close-circle-fill" style="font-size: 28px; cursor: pointer;" onclick="document.getElementById('lb-modal').style.display='none'"></i>
-            </div>
-            <div id="lb-list" style="overflow-y: auto; flex: 1; text-align: left;">
-                <div style="text-align:center; padding:20px;">Loading...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // CONFIG (FACELYZE)
         const firebaseConfig = {
-            apiKey: "AIzaSyAhyInLPhouHDZCPML-AvfOcns2Li9tWmM",
-            authDomain: "facelyze.firebaseapp.com",
-            databaseURL: "https://facelyze-default-rtdb.firebaseio.com",
-            projectId: "facelyze",
-            storageBucket: "facelyze.firebasestorage.app",
-            messagingSenderId: "814580139011",
-            appId: "1:814580139011:web:55ad90f052e7de32d93a36",
-            measurementId: "G-4GZYKL9QWG"
+            apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
+            authDomain: "solanacoin-6d9a8.firebaseapp.com",
+            databaseURL: "https://solanacoin-6d9a8-default-rtdb.firebaseio.com",
+            projectId: "solanacoin-6d9a8",
+            storageBucket: "solanacoin-6d9a8.firebasestorage.app",
+            messagingSenderId: "269025348490",
+            appId: "1:269025348490:web:87c95514a1d86485169673",
+            measurementId: "G-00X84VW123"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -349,272 +111,69 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // STATE
-        let user = {
-            id: null, username: "Guest", score: 0,
-            energy: 200, maxEnergy: 200,
-            autoMiner: 0,
-            adClaims: [0,0,0,0,0,0],
-            completedTasks: []
-        };
-        const AD_SLOTS = [2, 5, 10, 15, 30, 60];
+        let userId = localStorage.getItem('local_sim_id'); // Get ID saved from index.html
+        let userScore = 0;
 
-        // INIT
+        // Simulated Offers
+        const OFFERS = [
+            { id: 1, title: "Play Lords Mobile", reward: 5000, icon: "https://cdn-icons-png.flaticon.com/512/3408/3408506.png" },
+            { id: 2, title: "Complete Survey", reward: 2500, icon: "https://cdn-icons-png.flaticon.com/512/2910/2910768.png" },
+            { id: 3, title: "Install Alibaba", reward: 1200, icon: "https://cdn-icons-png.flaticon.com/512/888/888839.png" },
+            { id: 4, title: "Register Binance", reward: 10000, icon: "https://cdn-icons-png.flaticon.com/512/11421/11421337.png" }
+        ];
+
         async function init() {
-            if (tg.initDataUnsafe?.user) {
-                user.id = tg.initDataUnsafe.user.id.toString();
-                user.username = tg.initDataUnsafe.user.first_name;
-            } else {
-                user.id = "test_user_v2"; // Dev Mode
-            }
-            document.getElementById('username').innerText = user.username;
-
-            // Load User
-            try {
-                const snap = await get(ref(db, 'sol_users/' + user.id));
-                if (snap.exists()) {
-                    const d = snap.val();
-                    user.score = Number(d.score || 0);
-                    user.energy = (d.energy !== undefined) ? Number(d.energy) : 200;
-                    user.autoMiner = Number(d.autoMiner || 0);
-                    user.adClaims = d.adClaims || user.adClaims;
-                    user.completedTasks = d.completedTasks || [];
-                } else {
-                    saveUser();
-                }
-            } catch (e) { console.log("DB Error"); }
-
-            // Init Dynamic Tasks
-            initDefaultTasks(); 
-            loadTasks();
-
-            // Render
-            updateUI();
-            renderAds();
-            setInterval(saveUser, 4000);
-            setInterval(autoMine, 1000);
-            setInterval(checkAds, 1000);
-        }
-
-        function saveUser() {
-            if(user.id) update(ref(db, 'sol_users/' + user.id), user);
-        }
-
-        function updateUI() {
-            // Mine
-            document.getElementById('score').innerText = Math.floor(user.score).toLocaleString();
-            document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
-            document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
-            document.getElementById('auto-rate').innerText = user.autoMiner;
-
-            // Wallet
-            const sol = user.score / 10000;
-            document.getElementById('swap-in').innerText = Math.floor(user.score);
-            document.getElementById('swap-out').innerText = sol.toFixed(4);
-            document.getElementById('usd-val').innerText = (sol * 148.50).toFixed(2);
-        }
-
-        // --- TAP ---
-        document.getElementById('tap-btn').addEventListener('click', (e) => {
-            if (user.energy <= 0) {
-                document.getElementById('limit-modal').style.display = 'flex';
+            if(!userId) {
+                alert("Please go back to Main Menu first.");
                 return;
             }
-            user.score++;
-            user.energy--;
-            updateUI();
 
-            // FX
-            const fl = document.createElement('div');
-            fl.className = 'float-txt'; fl.innerText = '+1';
-            fl.style.left = e.clientX + 'px'; fl.style.top = e.clientY + 'px';
-            document.body.appendChild(fl);
-            setTimeout(()=>fl.remove(), 800);
-            tg.HapticFeedback.impactOccurred('light');
-        });
-
-        // --- TASKS (DATABASE) ---
-        async function initDefaultTasks() {
-            // Creates tasks if DB is empty
-            const snap = await get(ref(db, 'tasks'));
-            if (!snap.exists()) {
-                const defaults = {
-                    t1: { title: "Join Community", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png" },
-                    t2: { title: "Follow X", reward: 200, img: "https://cdn-icons-png.flaticon.com/512/733/733579.png" },
-                    t3: { title: "Visit Site", reward: 100, img: "https://cdn-icons-png.flaticon.com/512/1006/1006771.png" }
-                };
-                set(ref(db, 'tasks'), defaults);
-            }
-        }
-
-        async function loadTasks() {
-            const snap = await get(ref(db, 'tasks'));
-            const list = document.getElementById('task-list');
-            list.innerHTML = '';
-
-            if(snap.exists()) {
-                const tasks = snap.val();
-                Object.keys(tasks).forEach(key => {
-                    const t = tasks[key];
-                    const done = user.completedTasks.includes(key);
-                    const div = document.createElement('div');
-                    div.className = 'glass-panel task-item';
-                    div.innerHTML = `
-                        <img src="${t.img}" class="task-img">
-                        <div style="flex:1;">
-                            <div style="font-weight:bold;">${t.title}</div>
-                            <div style="color:var(--sol-green); font-size:12px;">+${t.reward}</div>
-                        </div>
-                        <button class="task-btn ${done ? 'done' : ''}" onclick="doTask('${key}', ${t.reward})">
-                            ${done ? 'Done' : 'Start'}
-                        </button>
-                    `;
-                    list.appendChild(div);
-                });
-            }
-        }
-
-        window.doTask = (key, reward) => {
-            if (user.completedTasks.includes(key)) return;
-            tg.openLink("https://google.com"); 
-            setTimeout(() => {
-                if(confirm("Task completed?")) {
-                    user.score += reward;
-                    user.completedTasks.push(key);
-                    saveUser();
-                    loadTasks();
-                    updateUI();
-                }
-            }, 2000);
-        }
-
-        // --- AD & BOOST ---
-        function renderAds() {
-            const grid = document.getElementById('ad-grid');
-            grid.innerHTML = '';
-            // Using a premium Lightning Icon (3D Style) from CDN
-            const iconUrl = "https://cdn-icons-png.flaticon.com/512/3712/3712170.png";
-            
-            AD_SLOTS.forEach((min, i) => {
-                const div = document.createElement('div');
-                div.className = 'glass-panel ad-card';
-                div.innerHTML = `
-                    <img src="${iconUrl}" class="magic-icon">
-                    <div style="font-size:11px;">Wait ${min}m</div>
-                    <div style="font-weight:bold; color:var(--sol-green);">+${min*5}</div>
-                    <button id="ad-btn-${i}" class="task-btn" style="width:100%; margin-top:5px;" onclick="claimAd(${i}, ${min})">Claim</button>
-                `;
-                grid.appendChild(div);
-            });
-        }
-        function checkAds() {
-            const now = Date.now();
-            AD_SLOTS.forEach((min, i) => {
-                const diff = now - user.adClaims[i];
-                const wait = min * 60000;
-                const btn = document.getElementById(`ad-btn-${i}`);
-                if (btn) {
-                    if (diff < wait) {
-                        btn.disabled = true;
-                        btn.style.opacity = 0.5;
-                        btn.innerText = Math.ceil((wait - diff)/60000) + "m";
-                    } else {
-                        btn.disabled = false;
-                        btn.style.opacity = 1;
-                        btn.innerText = "Claim";
-                    }
-                }
-            });
-        }
-        window.claimAd = (i, min) => {
-            showAd().then(() => {
-                user.score += (min * 5);
-                user.adClaims[i] = Date.now();
-                saveUser();
-                updateUI();
-            });
-        };
-        window.watchRefillAd = () => {
-             showAd().then(() => {
-                user.energy = user.maxEnergy;
-                saveUser();
-                updateUI();
-                document.getElementById('limit-modal').style.display='none';
-            });
-        };
-
-        function showAd() {
-            return new Promise((res, rej) => {
-                if (typeof show_10252050 === 'function') {
-                    show_10252050().then(res).catch(rej);
-                } else {
-                    alert("Ad Simulator"); res();
-                }
-            });
-        }
-
-        function autoMine() {
-            if(user.autoMiner > 0) { user.score += user.autoMiner; updateUI(); }
-        }
-        window.buyBot = () => {
-            if(user.score >= 500) { user.score-=500; user.autoMiner++; saveUser(); updateUI(); }
-        }
-
-        // --- LEADERBOARD FIX ---
-        window.openLeaderboard = async () => {
-            document.getElementById('lb-modal').style.display = 'flex';
-            const list = document.getElementById('lb-list');
-            list.innerHTML = '<div style="text-align:center; padding:20px;">Fetching Data...</div>';
-
+            // Load User Score
             try {
-                // Fetch ALL users then sort in JS (Safer for small/medium apps)
-                const snap = await get(ref(db, 'sol_users'));
-                
-                if (!snap.exists()) {
-                    list.innerHTML = '<div style="text-align:center;">No players yet.</div>';
-                    return;
+                const s = await get(ref(db, 'sol_users/' + userId));
+                if(s.exists()) {
+                    userScore = s.val().score || 0;
                 }
+            } catch(e) { console.log(e); }
 
-                // Convert Object to Array
-                let players = [];
-                snap.forEach(child => {
-                    const p = child.val();
-                    // Ensure score is a number for sorting
-                    players.push({ username: p.username, score: Number(p.score || 0) });
-                });
+            renderOffers();
+        }
 
-                // Sort High to Low
-                players.sort((a, b) => b.score - a.score);
-                // Top 20
-                players = players.slice(0, 20);
+        function renderOffers() {
+            const list = document.getElementById('offer-list');
+            list.innerHTML = '';
+            
+            OFFERS.forEach(offer => {
+                list.innerHTML += `
+                <div class="offer-card">
+                    <img src="${offer.icon}" class="offer-icon">
+                    <div class="offer-info">
+                        <div class="offer-title">${offer.title}</div>
+                        <div class="offer-reward">+${offer.reward.toLocaleString()} Coins</div>
+                    </div>
+                    <button class="claim-btn" onclick="startOffer(${offer.reward}, '${offer.title}')">GET</button>
+                </div>`;
+            });
+        }
 
-                list.innerHTML = '';
-                players.forEach((u, i) => {
-                    const div = document.createElement('div');
-                    div.className = 'lb-row';
-                    div.innerHTML = `
-                        <div class="lb-rank">#${i+1}</div>
-                        <div>${u.username.substring(0, 15)}</div>
-                        <div class="lb-val">
-                            <img src="https://cryptologos.cc/logos/solana-sol-logo.png" width="12">
-                            ${Math.floor(u.score).toLocaleString()}
-                        </div>
-                    `;
-                    list.appendChild(div);
-                });
-
-            } catch (e) {
-                console.error(e);
-                list.innerHTML = '<div style="text-align:center; color:red;">Check Firebase Rules</div>';
-            }
-        };
-
-        window.nav = (id, el) => {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('screen-'+id).classList.add('active');
-            el.classList.add('active');
-        };
+        window.startOffer = (reward, title) => {
+            // Simulate Offer Wall Logic
+            tg.showConfirm(`Start offer "${title}"?`, (confirmed) => {
+                if(confirmed) {
+                    // In a real app, this would open an Offerwall link
+                    // Here we simulate completion after 3 seconds
+                    tg.showAlert("Complete the task in the browser...");
+                    
+                    setTimeout(async () => {
+                        if(confirm(`Did you complete "${title}"?`)) {
+                            userScore += reward;
+                            await update(ref(db, 'sol_users/' + userId), { score: userScore });
+                            tg.showAlert(`Verified! +${reward} Coins added.`);
+                        }
+                    }, 3000);
+                }
+            });
+        }
 
         init();
     </script>
