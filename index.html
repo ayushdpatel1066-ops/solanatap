@@ -134,8 +134,18 @@
             transition: width 0.3s ease;
         }
         
-        .auto-mining-active { color: var(--sol-green); animation: pulseText 2s infinite; }
-        @keyframes pulseText { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+        /* AUTO MINER UI */
+        .auto-miner-container {
+            text-align: center; font-size: 12px; color: #666; margin-top: 10px;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .reactivate-btn {
+            background: var(--sol-green); color: black; border: none;
+            padding: 4px 10px; border-radius: 10px; font-weight: bold;
+            font-size: 10px; cursor: pointer; animation: pulseBtn 1s infinite;
+            display: none; /* Hidden by default */
+        }
+        @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         /* --- WALLET SCREEN --- */
         .wallet-card {
@@ -252,9 +262,15 @@
             <div class="energy-track">
                 <div class="energy-fill" id="energy-fill"></div>
             </div>
-            <div style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
-                <i class="ri-flashlight-fill" style="color: var(--sol-purple);"></i> 
-                Auto-Miner: <span id="auto-rate">0</span>/sec
+            
+            <!-- UPDATED AUTO MINER UI -->
+            <div class="auto-miner-container">
+                <div>
+                    <i class="ri-flashlight-fill" style="color: var(--sol-purple);"></i> 
+                    Auto-Miner: <span id="auto-rate">0</span>/sec 
+                    <span id="miner-timer" style="color:var(--sol-green); font-weight:bold;">(30s)</span>
+                </div>
+                <button class="reactivate-btn" id="reactivate-btn" onclick="extendMining()">⚡ Reactivate (Ad)</button>
             </div>
         </div>
     </div>
@@ -324,7 +340,8 @@
             <i class="ri-telegram-fill"></i> Join Channel
         </button>
 
-        <button class="btn-action" onclick="showWithdrawModal()">Connect Wallet</button>
+        <!-- UPDATED CONNECT BUTTON -->
+        <button class="btn-action" onclick="handleConnectWallet()">Connect Wallet</button>
     </div>
 
     <!-- NAV & MODALS -->
@@ -332,7 +349,7 @@
         <div class="nav-btn active" onclick="nav('mine', this)"><i class="ri-hammer-fill"></i><span>Mine</span></div>
         <div class="nav-btn" onclick="nav('tasks', this)"><i class="ri-list-check"></i><span>Tasks</span></div>
         
-        <!-- OFFERS MENU (Kept as requested) -->
+        <!-- OFFERS MENU -->
         <div class="nav-btn" onclick="window.location.href='offers.html'"><i class="ri-store-2-fill"></i><span>Offers</span></div>
         
         <div class="nav-btn" onclick="nav('boost', this)"><i class="ri-rocket-2-fill"></i><span>Boost</span></div>
@@ -347,20 +364,14 @@
         </div>
     </div>
     
-    <div id="idle-modal" class="modal-overlay" style="z-index: 1000;">
-        <div class="modal-box">
-            <i class="ri-zzz-fill" style="font-size: 50px; color: #999;"></i>
-            <h3>Sleep Mode</h3>
-            <p style="color:#888; font-size:14px;">Miner paused due to inactivity.</p>
-            <button class="btn-action" onclick="resumeFromIdle()">📺 Wake Up (Ad)</button>
-        </div>
-    </div>
+    <!-- IDLE MODAL REMOVED -->
 
     <div id="withdraw-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="ri-lock-2-fill" style="font-size: 40px; color: #ffd700;"></i>
             <h3>Min Withdraw $1000</h3>
-            <button class="btn-action" onclick="closeWithdrawModal()">I Understand</button>
+            <!-- UPDATED BUTTON -->
+            <button class="btn-action" onclick="handleWithdrawUnderstand()">I Understand</button>
         </div>
     </div>
 
@@ -430,16 +441,14 @@
             ETH: { price: 3500.00, icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png" }
         };
 
-        let idleTimer = 0;
-        let isIdle = false;
-        const IDLE_LIMIT = 20;
+        // --- NEW AUTO MINER TIMER ---
+        let miningTimer = 30;
 
         async function init() {
             try {
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
                     user.id = tg.initDataUnsafe.user.id.toString();
                     user.username = tg.initDataUnsafe.user.first_name || "Miner";
-                    // SAVE ID FOR OFFERS PAGE
                     localStorage.setItem('local_sim_id', user.id); 
                 } else {
                     const localId = localStorage.getItem('local_sim_id');
@@ -473,10 +482,12 @@
             updateUI(); 
             renderAds();
             setInterval(saveUser, 4000);
+            
+            // UPDATED AUTO MINE LOOP
             setInterval(autoMine, 1000);
+            
             setInterval(checkAds, 1000);
-            setInterval(checkIdle, 1000);
-            setupIdleListeners();
+            // REMOVED IDLE CHECK
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
@@ -501,32 +512,6 @@
                     reject();
                 });
             });
-        }
-
-        function setupIdleListeners() {
-            const reset = () => { if(!isIdle) idleTimer = 0; };
-            const zone = document.getElementById('screen-mine');
-            zone.addEventListener('click', reset);
-            zone.addEventListener('touchstart', reset);
-            zone.addEventListener('mousemove', reset);
-        }
-
-        function checkIdle() {
-            if(document.getElementById('screen-mine').classList.contains('active') && !isIdle && document.getElementById('limit-modal').style.display !== 'flex') {
-                idleTimer++;
-                if(idleTimer >= IDLE_LIMIT) {
-                    isIdle = true;
-                    document.getElementById('idle-modal').style.display = 'flex';
-                }
-            }
-        }
-
-        window.resumeFromIdle = () => {
-            showAd().then(() => {
-                isIdle = false;
-                idleTimer = 0;
-                document.getElementById('idle-modal').style.display = 'none';
-            }).catch(() => {});
         }
 
         window.claimMiniBonus = () => {
@@ -554,12 +539,21 @@
              document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              
+             // UPDATE AUTO MINER UI
              const arEl = document.getElementById('auto-rate');
              arEl.innerText = user.autoMiner;
-             if(user.autoMiner > 0 && !isIdle) {
-                 arEl.parentElement.classList.add('auto-mining-active');
+             
+             const timerEl = document.getElementById('miner-timer');
+             const reactBtn = document.getElementById('reactivate-btn');
+             
+             if(miningTimer > 0) {
+                 timerEl.innerText = `(${miningTimer}s)`;
+                 timerEl.style.color = "var(--sol-green)";
+                 reactBtn.style.display = "none";
              } else {
-                 arEl.parentElement.classList.remove('auto-mining-active');
+                 timerEl.innerText = "(Paused)";
+                 timerEl.style.color = "#ff4757";
+                 reactBtn.style.display = "inline-block";
              }
 
              const solTotal = user.score / 10000;
@@ -581,7 +575,6 @@
         };
 
         document.getElementById('tap-btn').addEventListener('click', (e) => {
-            if (isIdle) return;
             if (user.energy <= 0) { document.getElementById('limit-modal').style.display = 'flex'; return; }
             user.score++; user.energy--; 
             const coin = document.getElementById('tap-btn');
@@ -655,9 +648,22 @@
             } else { tg.showAlert("Need 1000 Coins to upgrade!"); }
         }
         
+        // --- UPDATED AUTO MINER LOGIC ---
         function autoMine(){
-            if(isIdle) return; 
-            if(user.autoMiner > 0){ user.score += user.autoMiner; updateUI(); }
+            if(user.autoMiner > 0 && miningTimer > 0){
+                user.score += user.autoMiner;
+                miningTimer--;
+                updateUI();
+            }
+        }
+
+        // --- NEW: EXTEND MINING ---
+        window.extendMining = () => {
+            showAd().then(() => {
+                miningTimer = 30; // Reset to 30 seconds
+                updateUI();
+                tg.showAlert("Miner Reactivated!");
+            }).catch(() => {});
         }
         
         function renderAds(){ 
@@ -719,8 +725,22 @@
             }).catch(() => {});
         }
 
-        window.showWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='flex'; }
-        window.closeWithdrawModal = () => { document.getElementById('withdraw-modal').style.display='none'; }
+        // --- NEW: WALLET AD LOGIC ---
+        window.handleConnectWallet = () => {
+            showAd().then(() => {
+                document.getElementById('withdraw-modal').style.display = 'flex';
+            }).catch(() => {});
+        }
+
+        window.handleWithdrawUnderstand = () => {
+            showAd().then(() => {
+                document.getElementById('withdraw-modal').style.display = 'none';
+            }).catch(() => {});
+        }
+
+        // Removed old simple functions, replaced with handled ones above
+        window.showWithdrawModal = () => {}; 
+        window.closeWithdrawModal = () => {};
 
         window.openLeaderboard = async () => {
             document.getElementById('lb-modal').style.display='flex';
