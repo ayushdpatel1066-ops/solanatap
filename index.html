@@ -340,7 +340,6 @@
             <i class="ri-telegram-fill"></i> Join Channel
         </button>
 
-        <!-- UPDATED CONNECT BUTTON -->
         <button class="btn-action" onclick="handleConnectWallet()">Connect Wallet</button>
     </div>
 
@@ -348,10 +347,13 @@
     <div class="nav-bar glass-panel">
         <div class="nav-btn active" onclick="nav('mine', this)"><i class="ri-hammer-fill"></i><span>Mine</span></div>
         <div class="nav-btn" onclick="nav('tasks', this)"><i class="ri-list-check"></i><span>Tasks</span></div>
-         <div class="nav-btn" onclick="window.location.href='refer.html'"><i class="ri-user-add-fill"></i><span>Friends</span></div>
+        
         <!-- OFFERS MENU -->
         <div class="nav-btn" onclick="window.location.href='offers.html'"><i class="ri-store-2-fill"></i><span>Offers</span></div>
         
+        <!-- FRIENDS/REFER MENU -->
+        <div class="nav-btn" onclick="window.location.href='refer.html'"><i class="ri-user-add-fill"></i><span>Friends</span></div>
+
         <div class="nav-btn" onclick="nav('boost', this)"><i class="ri-rocket-2-fill"></i><span>Boost</span></div>
         <div class="nav-btn" onclick="nav('wallet', this)"><i class="ri-wallet-3-fill"></i><span>Wallet</span></div>
     </div>
@@ -363,14 +365,11 @@
             <button class="btn-action" onclick="watchRefillAd()">📺 Refill</button>
         </div>
     </div>
-    
-    <!-- IDLE MODAL REMOVED -->
 
     <div id="withdraw-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="ri-lock-2-fill" style="font-size: 40px; color: #ffd700;"></i>
             <h3>Min Withdraw $1000</h3>
-            <!-- UPDATED BUTTON -->
             <button class="btn-action" onclick="handleWithdrawUnderstand()">I Understand</button>
         </div>
     </div>
@@ -387,7 +386,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, get, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
@@ -441,7 +440,6 @@
             ETH: { price: 3500.00, icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png" }
         };
 
-        // --- NEW AUTO MINER TIMER ---
         let miningTimer = 30;
 
         async function init() {
@@ -462,8 +460,12 @@
                 }
                 document.getElementById('username').innerText = user.username;
 
-                const snap = await get(ref(db, 'sol_users/' + user.id));
+                // --- REFERRAL LOGIC ---
+                const userRef = ref(db, 'sol_users/' + user.id);
+                const snap = await get(userRef);
+
                 if (snap.exists()) {
+                    // EXISTING USER
                     const d = snap.val();
                     user.score = Number(d.score || 0);
                     user.energy = Number(d.energy ?? 50);
@@ -471,7 +473,21 @@
                     user.adClaims = d.adClaims || [0,0,0,0];
                     user.completedTasks = d.completedTasks || [];
                     user.lastMiniClaim = d.lastMiniClaim || 0;
-                } else { saveUser(); }
+                } else {
+                    // NEW USER
+                    const startParam = tg.initDataUnsafe.start_param;
+                    if (startParam && startParam.startsWith('ref_')) {
+                        const referrerId = startParam.split('_')[1];
+                        if (referrerId && referrerId !== user.id) {
+                            // Give 10k to referrer
+                            const refUserRef = ref(db, 'sol_users/' + referrerId);
+                            update(refUserRef, { score: increment(10000) });
+                            // Record referral
+                            update(ref(db, 'sol_users/' + referrerId + '/referrals'), { [user.id]: true });
+                        }
+                    }
+                    saveUser();
+                }
 
             } catch (e) {
                 console.error("User Load Error:", e);
@@ -487,7 +503,6 @@
             setInterval(autoMine, 1000);
             
             setInterval(checkAds, 1000);
-            // REMOVED IDLE CHECK
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
@@ -539,7 +554,6 @@
              document.getElementById('energy-txt').innerText = `${user.energy}/${user.maxEnergy}`;
              document.getElementById('energy-fill').style.width = `${(user.energy/user.maxEnergy)*100}%`;
              
-             // UPDATE AUTO MINER UI
              const arEl = document.getElementById('auto-rate');
              arEl.innerText = user.autoMiner;
              
@@ -648,7 +662,6 @@
             } else { tg.showAlert("Need 1000 Coins to upgrade!"); }
         }
         
-        // --- UPDATED AUTO MINER LOGIC ---
         function autoMine(){
             if(user.autoMiner > 0 && miningTimer > 0){
                 user.score += user.autoMiner;
@@ -657,10 +670,9 @@
             }
         }
 
-        // --- NEW: EXTEND MINING ---
         window.extendMining = () => {
             showAd().then(() => {
-                miningTimer = 30; // Reset to 30 seconds
+                miningTimer = 30; 
                 updateUI();
                 tg.showAlert("Miner Reactivated!");
             }).catch(() => {});
@@ -725,7 +737,6 @@
             }).catch(() => {});
         }
 
-        // --- NEW: WALLET AD LOGIC ---
         window.handleConnectWallet = () => {
             showAd().then(() => {
                 document.getElementById('withdraw-modal').style.display = 'flex';
@@ -738,7 +749,6 @@
             }).catch(() => {});
         }
 
-        // Removed old simple functions, replaced with handled ones above
         window.showWithdrawModal = () => {}; 
         window.closeWithdrawModal = () => {};
 
