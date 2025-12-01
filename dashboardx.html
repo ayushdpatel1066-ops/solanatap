@@ -13,16 +13,6 @@
     <!-- SWEETALERT FOR POPUPS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
-         <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
-          <script>
-            window.TelegramAdsController = new TelegramAdsController();
-            window.TelegramAdsController.initialize({
-              pubId: "941543",
-              appId: "4828",
-            });
-          </script>
-    
     <style>
         :root {
             --sol-green: #14F195;
@@ -62,6 +52,7 @@
             padding: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             transition: transform 0.2s;
+            margin-bottom: 20px;
         }
         
         .stat-card:hover { transform: translateY(-5px); border-color: var(--sol-purple); }
@@ -93,6 +84,16 @@
         .rank-silver { background: rgba(192, 192, 192, 0.2); color: #c0c0c0; border: 1px solid #c0c0c0; }
         .rank-gold { background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid #ffd700; }
         .rank-plat { background: rgba(229, 228, 226, 0.2); color: #e5e4e2; border: 1px solid #e5e4e2; }
+
+        /* REFERRAL LEADERBOARD */
+        .ref-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .ref-count-badge {
+            background: var(--sol-green); color: black; font-weight: bold;
+            padding: 2px 8px; border-radius: 10px; font-size: 12px;
+        }
 
         /* MODAL */
         .modal-content {
@@ -136,11 +137,8 @@
         <div style="color: #666; font-size: 12px; margin-bottom: 10px;">MENU</div>
         <ul class="list-unstyled">
             <li class="mb-3"><a href="#" class="text-white text-decoration-none"><i class="ri-user-line me-2"></i> Users</a></li>
-            <li class="mb-3"><a href="#" class="text-white-50 text-decoration-none"><i class="ri-settings-4-line me-2"></i> Settings (Demo)</a></li>
+            <li class="mb-3"><a href="#" class="text-white-50 text-decoration-none"><i class="ri-settings-4-line me-2"></i> Settings</a></li>
         </ul>
-        <div style="position: absolute; bottom: 20px; color: #444; font-size: 11px;">
-            Database: Firebase<br>Ver: 1.0.2
-        </div>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -148,55 +146,76 @@
         
         <!-- TOP STATS -->
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="glass-card stat-card">
                     <div class="stat-label">Total Users</div>
                     <div class="stat-val" id="total-users">0</div>
                     <i class="ri-group-fill stat-icon" style="color: var(--sol-purple);"></i>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="glass-card stat-card">
-                    <div class="stat-label">Total Coins Mined</div>
+                    <div class="stat-label">Total Coins</div>
                     <div class="stat-val" id="total-coins">0</div>
                     <i class="ri-coin-fill stat-icon" style="color: var(--sol-green);"></i>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="glass-card stat-card">
-                    <div class="stat-label">Avg. Auto Miner Lvl</div>
+                    <div class="stat-label">Total Referrals</div>
+                    <div class="stat-val" id="total-refs">0</div>
+                    <i class="ri-share-forward-fill stat-icon" style="color: orange;"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card stat-card">
+                    <div class="stat-label">Avg. Bot Lvl</div>
                     <div class="stat-val" id="avg-bot">0</div>
                     <i class="ri-robot-2-fill stat-icon" style="color: cyan;"></i>
                 </div>
             </div>
         </div>
 
-        <!-- TABLE SECTION -->
-        <div class="glass-card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="m-0">User Database</h5>
-                <input type="text" id="searchInput" class="search-input" placeholder="Search ID or Username..." onkeyup="filterTable()">
+        <div class="row">
+            <!-- MAIN USER TABLE -->
+            <div class="col-lg-8">
+                <div class="glass-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="m-0">User Database</h5>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search ID or Username..." onkeyup="filterTable()">
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover" id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Rank</th>
+                                    <th>Refs</th> <!-- NEW COLUMN -->
+                                    <th>Balance</th>
+                                    <th>Energy</th>
+                                    <th>Bot</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Data Injected Here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-data" class="text-center py-5 text-muted" style="display:none;">No users found matching query.</div>
+                </div>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-dark table-hover" id="userTable">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Rank</th>
-                            <th>Balance</th>
-                            <th>Energy</th>
-                            <th>Bot Lvl</th>
-                            <th>Last Active (Claim)</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <!-- Data Injected Here -->
-                    </tbody>
-                </table>
+            <!-- TOP REFERRERS LIST (NEW) -->
+            <div class="col-lg-4">
+                <div class="glass-card">
+                    <h5 class="mb-4" style="color: gold;"><i class="ri-trophy-fill"></i> Top Referrers</h5>
+                    <div id="top-ref-list">
+                        <div class="text-center text-muted">Loading...</div>
+                    </div>
+                </div>
             </div>
-            <div id="no-data" class="text-center py-5 text-muted" style="display:none;">No users found matching query.</div>
         </div>
     </div>
 
@@ -233,8 +252,8 @@
                         </div>
                         <div class="col-6">
                             <div class="detail-group">
-                                <div class="detail-label">ENERGY</div>
-                                <div class="detail-val text-warning" id="m-energy">0/0</div>
+                                <div class="detail-label">REFERRALS</div>
+                                <div class="detail-val text-warning" id="m-refcount">0</div>
                             </div>
                         </div>
                     </div>
@@ -245,15 +264,10 @@
                     </div>
 
                     <div class="detail-group">
-                        <div class="detail-label">MAGIC AD CLAIMS (Timestamps)</div>
+                        <div class="detail-label">MAGIC AD CLAIMS</div>
                         <div class="detail-val text-white" id="m-ads" style="font-weight: normal; font-size: 11px; font-family: monospace;">
-                            Slot 1: Never<br>Slot 2: Never
+                            ...
                         </div>
-                    </div>
-
-                    <div class="detail-group">
-                        <div class="detail-label">LAST MINI BONUS</div>
-                        <div class="detail-val text-white" id="m-mini">Never</div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -269,7 +283,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- UPDATED CONFIGURATION (YOUR PRIVATE DATABASE) ---
+        // --- YOUR PRIVATE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
             authDomain: "solanacoin-6d9a8.firebaseapp.com",
@@ -295,25 +309,33 @@
                     allUsers = [];
                     let totalCoins = 0;
                     let totalBot = 0;
+                    let totalReferrals = 0;
 
                     snapshot.forEach(child => {
                         const u = child.val();
                         u.key = child.key; // Store ID
+                        
+                        // Calculate Referrals
+                        u.refCount = u.referrals ? Object.keys(u.referrals).length : 0;
+                        
                         allUsers.push(u);
                         
                         totalCoins += (u.score || 0);
                         totalBot += (u.autoMiner || 0);
+                        totalReferrals += u.refCount;
                     });
 
                     // Update Stats
                     document.getElementById('total-users').innerText = allUsers.length;
-                    document.getElementById('total-coins').innerText = Math.floor(totalCoins).toLocaleString();
+                    document.getElementById('total-coins').innerText = formatNum(totalCoins);
+                    document.getElementById('total-refs').innerText = totalReferrals;
                     document.getElementById('avg-bot').innerText = (allUsers.length > 0 ? (totalBot / allUsers.length).toFixed(1) : 0);
 
-                    // Sort by Score (High to Low)
+                    // Sort by Score (Default)
                     allUsers.sort((a, b) => (b.score || 0) - (a.score || 0));
 
                     renderTable(allUsers);
+                    renderTopReferrers(allUsers);
                 }
             } catch (error) {
                 console.error(error);
@@ -322,7 +344,7 @@
             document.getElementById('loader').style.display = 'none';
         }
 
-        // --- RENDER TABLE ---
+        // --- RENDER MAIN TABLE ---
         window.renderTable = (data) => {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
@@ -334,19 +356,11 @@
             document.getElementById('no-data').style.display = 'none';
 
             data.forEach(u => {
-                // Determine Rank
                 let rankBadge = '<span class="badge-rank rank-bronze">Bronze</span>';
                 const s = u.score || 0;
                 if(s > 100000) rankBadge = '<span class="badge-rank rank-plat">Platinum</span>';
                 else if(s > 25000) rankBadge = '<span class="badge-rank rank-gold">Gold</span>';
                 else if(s > 5000) rankBadge = '<span class="badge-rank rank-silver">Silver</span>';
-
-                // Format Time (Last Mini Claim is a good proxy for activity)
-                let lastActive = "Unknown";
-                if(u.lastMiniClaim) {
-                    const d = new Date(u.lastMiniClaim);
-                    lastActive = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                }
 
                 const tr = document.createElement('tr');
                 tr.className = 'user-row';
@@ -363,16 +377,45 @@
                         </div>
                     </td>
                     <td>${rankBadge}</td>
-                    <td style="color:var(--sol-green); font-weight:bold;">${Math.floor(s).toLocaleString()}</td>
-                    <td>${u.energy || 0}/${u.maxEnergy || 200}</td>
+                    <td style="color:orange; font-weight:bold;">${u.refCount}</td>
+                    <td style="color:var(--sol-green); font-weight:bold;">${formatNum(s)}</td>
+                    <td>${u.energy || 0}/${u.maxEnergy || 50}</td>
                     <td><i class="ri-robot-2-line"></i> ${u.autoMiner || 0}</td>
-                    <td style="font-size:12px; color:#aaa;">${lastActive}</td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-light" onclick="viewUser('${u.key}')">View</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // --- RENDER TOP REFERRERS LIST ---
+        function renderTopReferrers(users) {
+            const listEl = document.getElementById('top-ref-list');
+            listEl.innerHTML = '';
+
+            // Sort by Referrals
+            const sortedByRef = [...users].sort((a, b) => b.refCount - a.refCount).slice(0, 5);
+
+            sortedByRef.forEach((u, index) => {
+                if(u.refCount === 0) return; // Skip if 0 refs
+
+                listEl.innerHTML += `
+                <div class="ref-row">
+                    <div class="d-flex align-items-center">
+                        <div style="width:25px; margin-right:10px; color:gold; font-weight:bold;">#${index+1}</div>
+                        <div>
+                            <div style="font-weight:bold; font-size:14px;">${u.username || "Guest"}</div>
+                            <div style="font-size:10px; color:#666;">${u.key.substring(0,8)}...</div>
+                        </div>
+                    </div>
+                    <div class="ref-count-badge">${u.refCount} Refs</div>
+                </div>`;
+            });
+
+            if(listEl.innerHTML === '') {
+                listEl.innerHTML = '<div class="text-center text-muted py-3">No referrals yet.</div>';
+            }
         }
 
         // --- FILTER ---
@@ -394,7 +437,7 @@
             document.getElementById('m-username').innerText = u.username || "Guest";
             document.getElementById('m-id').innerText = u.key;
             document.getElementById('m-score').innerText = (u.score || 0).toLocaleString();
-            document.getElementById('m-energy').innerText = `${u.energy || 0} / ${u.maxEnergy || 200}`;
+            document.getElementById('m-refcount').innerText = u.refCount;
             
             // Tasks
             if(u.completedTasks && Array.isArray(u.completedTasks) && u.completedTasks.length > 0) {
@@ -415,13 +458,6 @@
                 adHtml += `Slot ${index+1}: <span style="color:#aaa">${timeStr}</span><br>`;
             });
             document.getElementById('m-ads').innerHTML = adHtml;
-
-            // Mini Bonus
-            if(u.lastMiniClaim) {
-                document.getElementById('m-mini').innerText = new Date(u.lastMiniClaim).toLocaleString();
-            } else {
-                document.getElementById('m-mini').innerText = "Never";
-            }
 
             const modal = new bootstrap.Modal(document.getElementById('detailModal'));
             modal.show();
@@ -455,6 +491,10 @@
                     Swal.fire('Error', 'Could not delete user.', 'error');
                 }
             }
+        }
+
+        function formatNum(n) {
+            return Math.floor(n).toLocaleString();
         }
 
         // Initialize
