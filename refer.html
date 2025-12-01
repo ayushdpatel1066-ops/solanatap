@@ -153,9 +153,12 @@
         tg.expand();
 
         let userId = localStorage.getItem('local_sim_id');
-        // REPLACE 'soltapcoin_bot' WITH YOUR ACTUAL BOT USERNAME
-        // REPLACE 'app' WITH YOUR APP SHORT NAME IF CONFIGURED
         let inviteLink = ""; 
+
+        // --- SETTINGS ---
+        const botUsername = 'solanatapbot'; 
+        // 👇 IMPORTANT: CHANGE 'miner' TO YOUR APP SHORT NAME FROM BOTFATHER 👇
+        const appShortName = 'miner'; 
 
         async function init() {
             if(!userId) {
@@ -168,8 +171,8 @@
             }
 
             // Construct Link
-            // Format: https://t.me/BOT_USERNAME/APP_NAME?startapp=ref_USERID
-            inviteLink = `https://t.me/solanatapbot/app?startapp=ref_${userId}`;
+            // This format works if you created a "New App" in BotFather
+            inviteLink = `https://t.me/${botUsername}/${appShortName}?startapp=ref_${userId}`;
             document.getElementById('ref-link').innerText = inviteLink;
 
             // Load Stats
