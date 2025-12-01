@@ -97,6 +97,37 @@
         .stat-val { font-size: 20px; font-weight: 900; color: white; }
         .stat-label { font-size: 11px; color: #888; text-transform: uppercase; }
 
+        /* --- WITHDRAW UNLOCK CARD (NEW) --- */
+        .withdraw-card {
+            background: var(--glass);
+            padding: 20px; border-radius: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 25px; text-align: left;
+        }
+        .w-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; font-weight: bold; font-size: 14px;
+        }
+        .status-badge {
+            padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase;
+        }
+        .status-locked { background: rgba(255, 71, 87, 0.15); color: #ff4757; border: 1px solid #ff4757; }
+        .status-unlocked { background: rgba(20, 241, 149, 0.15); color: var(--sol-green); border: 1px solid var(--sol-green); }
+
+        .progress-track {
+            background: #222; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #333;
+        }
+        .progress-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            transition: width 1s ease, background 0.3s;
+        }
+        .progress-fill.done { background: var(--sol-green); }
+
+        .w-footer {
+            margin-top: 8px; font-size: 12px; color: #aaa; text-align: right;
+        }
+
         /* REFERRAL LIST */
         .list-header { text-align: left; font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #ddd; }
         .ref-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 50px; }
@@ -154,6 +185,20 @@
             </div>
         </div>
 
+        <!-- WITHDRAW UNLOCK CARD (NEW) -->
+        <div class="withdraw-card">
+            <div class="w-header">
+                <span>Withdraw Unlock</span>
+                <span id="w-status" class="status-badge status-locked"><i class="ri-lock-2-fill"></i> Locked</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="w-progress"></div>
+            </div>
+            <div class="w-footer">
+                <span id="w-current">0</span>/30 Friends Invited
+            </div>
+        </div>
+
         <!-- STATS -->
         <div class="stats-grid">
             <div class="stat-box">
@@ -198,13 +243,13 @@
         // --- SETTINGS ---
         const BOT_USERNAME = 'solanatapbot'; 
         const APP_NAME = 'solanatap'; 
+        const TARGET_REF = 30; // Target for Unlock
 
         let userId = localStorage.getItem('local_sim_id');
         let inviteLink = "";
 
         async function init() {
             if(!userId) {
-                // Fallback check
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     userId = tg.initDataUnsafe.user.id.toString();
                 } else {
@@ -213,11 +258,9 @@
                 }
             }
 
-            // 1. Generate Link
             inviteLink = `https://t.me/${BOT_USERNAME}/${APP_NAME}?startapp=ref_${userId}`;
             document.getElementById('ref-link').innerText = inviteLink;
 
-            // 2. Fetch Referrals
             loadReferrals();
         }
 
@@ -225,34 +268,31 @@
             const listEl = document.getElementById('referral-list');
             
             try {
-                // Get list of IDs referred by this user
                 const snapshot = await get(ref(db, 'sol_users/' + userId + '/referrals'));
                 
                 if(snapshot.exists()) {
-                    const referrals = snapshot.val(); // Object like { "12345": true, "67890": true }
+                    const referrals = snapshot.val();
                     const refIds = Object.keys(referrals);
+                    const count = refIds.length;
                     
-                    // Update Stats
-                    document.getElementById('ref-count').innerText = refIds.length;
-                    animateValue("ref-earnings", 0, refIds.length * 10000, 1500);
+                    // 1. Update Basic Stats
+                    document.getElementById('ref-count').innerText = count;
+                    animateValue("ref-earnings", 0, count * 10000, 1500);
 
-                    listEl.innerHTML = ''; // Clear loader
+                    // 2. Update Withdraw Unlock Progress
+                    updateUnlockProgress(count);
 
-                    // Fetch details for each referred user to show name
-                    // We map array of promises to load fast
+                    // 3. Render List
+                    listEl.innerHTML = ''; 
                     const promises = refIds.map(async (id) => {
                         const userSnap = await get(ref(db, 'sol_users/' + id));
-                        if(userSnap.exists()) {
-                            return userSnap.val();
-                        }
+                        if(userSnap.exists()) return userSnap.val();
                         return { username: "Unknown User" };
                     });
 
                     const users = await Promise.all(promises);
 
-                    // Render List
                     users.forEach((u, index) => {
-                        // Stagger animation delay
                         const delay = index * 0.1;
                         const name = u.username ? u.username : "Friend";
                         const firstChar = name.charAt(0).toUpperCase();
@@ -272,6 +312,7 @@
 
                 } else {
                     listEl.innerHTML = '<div class="empty-state">You haven\'t invited anyone yet.</div>';
+                    updateUnlockProgress(0);
                 }
             } catch(e) {
                 console.error(e);
@@ -279,7 +320,27 @@
             }
         }
 
-        // Animation for numbers
+        function updateUnlockProgress(count) {
+            const current = Math.min(count, TARGET_REF);
+            const percentage = (current / TARGET_REF) * 100;
+            
+            document.getElementById('w-current').innerText = current;
+            const fill = document.getElementById('w-progress');
+            fill.style.width = percentage + '%';
+
+            const statusEl = document.getElementById('w-status');
+
+            if (count >= TARGET_REF) {
+                statusEl.className = 'status-badge status-unlocked';
+                statusEl.innerHTML = '<i class="ri-lock-unlock-fill"></i> Unlocked';
+                fill.classList.add('done');
+            } else {
+                statusEl.className = 'status-badge status-locked';
+                statusEl.innerHTML = '<i class="ri-lock-2-fill"></i> Locked';
+                fill.classList.remove('done');
+            }
+        }
+
         function animateValue(id, start, end, duration) {
             const obj = document.getElementById(id);
             let startTimestamp = null;
