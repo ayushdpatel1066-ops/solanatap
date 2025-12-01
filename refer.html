@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Refer - Solana Miner</title>
+    
+    <!-- FONTS & ICONS -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- SDKS -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --sol-green: #14F195;
+            --sol-purple: #9945FF;
+            --bg-dark: #000000;
+            --glass: rgba(20, 20, 20, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Outfit', sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 0%, rgba(153, 69, 255, 0.2) 0%, transparent 60%);
+            color: white;
+            font-family: var(--font-main);
+            margin: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer;
+        }
+
+        .content { flex: 1; overflow-y: auto; padding: 30px 20px; text-align: center; }
+
+        .invite-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(20, 241, 149, 0.15);
+        }
+
+        .coin-img { width: 120px; margin-bottom: 20px; filter: drop-shadow(0 0 20px var(--sol-green)); }
+
+        h1 { margin: 0; font-size: 32px; font-weight: 900; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #888; font-size: 14px; margin: 10px 0 20px; }
+
+        .reward-tag {
+            background: rgba(20, 241, 149, 0.1); border: 1px solid var(--sol-green);
+            color: var(--sol-green); padding: 8px 16px; border-radius: 20px;
+            font-weight: bold; font-size: 14px; display: inline-block;
+        }
+
+        .invite-btn {
+            width: 100%; padding: 18px; border-radius: 15px; border: none;
+            background: linear-gradient(45deg, var(--sol-green), #0abf70);
+            color: #000; font-weight: 800; font-size: 18px; margin-top: 20px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 5px 20px rgba(20, 241, 149, 0.4);
+        }
+        .invite-btn:active { transform: scale(0.98); }
+
+        .link-box {
+            background: #111; border: 1px solid #333; padding: 15px;
+            border-radius: 15px; margin-top: 20px; display: flex;
+            align-items: center; justify-content: space-between;
+        }
+        .link-text { color: #666; font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: 1; text-align: left; }
+        .copy-icon { color: white; font-size: 18px; cursor: pointer; padding: 5px; }
+
+        .stats-row { display: flex; justify-content: space-between; margin-top: 30px; }
+        .stat-box {
+            background: rgba(255,255,255,0.05); width: 48%; padding: 15px;
+            border-radius: 15px; text-align: center;
+        }
+        .stat-val { font-size: 24px; font-weight: 900; color: white; }
+        .stat-label { font-size: 12px; color: #888; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-arrow-left-line"></i></button>
+        <h3 style="margin:0;">Invite Friends</h3>
+        <div style="width:40px;"></div>
+    </div>
+
+    <div class="content">
+        <div class="invite-card">
+            <img src="https://cdn-icons-png.flaticon.com/512/9472/9472099.png" class="coin-img">
+            <h1>Invite & Earn</h1>
+            <p>Get 10,000 Coins for every friend who joins Solana Miner Ultra!</p>
+            <div class="reward-tag">+10,000 Coins</div>
+
+            <button class="invite-btn" onclick="inviteFriends()">
+                <i class="ri-share-forward-fill"></i> Invite Friends
+            </button>
+
+            <div class="link-box" onclick="copyLink()">
+                <div class="link-text" id="ref-link">Loading link...</div>
+                <i class="ri-file-copy-line copy-icon"></i>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-val" id="ref-count">0</div>
+                <div class="stat-label">Friends Invited</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-val" id="ref-earnings">0</div>
+                <div class="stat-label">Coins Earned</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAghmBjfnclb4yIwEmx7Uxssj7cpZkea1Q",
+            authDomain: "solanacoin-6d9a8.firebaseapp.com",
+            databaseURL: "https://solanacoin-6d9a8-default-rtdb.firebaseio.com",
+            projectId: "solanacoin-6d9a8",
+            storageBucket: "solanacoin-6d9a8.firebasestorage.app",
+            messagingSenderId: "269025348490",
+            appId: "1:269025348490:web:87c95514a1d86485169673",
+            measurementId: "G-00X84VW123"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let userId = localStorage.getItem('local_sim_id');
+        // REPLACE 'soltapcoin_bot' WITH YOUR ACTUAL BOT USERNAME
+        // REPLACE 'app' WITH YOUR APP SHORT NAME IF CONFIGURED
+        let inviteLink = ""; 
+
+        async function init() {
+            if(!userId) {
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    userId = tg.initDataUnsafe.user.id.toString();
+                } else {
+                    alert("Please go back to Main Menu first.");
+                    return;
+                }
+            }
+
+            // Construct Link
+            // Format: https://t.me/BOT_USERNAME/APP_NAME?startapp=ref_USERID
+            inviteLink = `https://t.me/soltapcoin_bot/app?startapp=ref_${userId}`;
+            document.getElementById('ref-link').innerText = inviteLink;
+
+            // Load Stats
+            try {
+                const s = await get(ref(db, 'sol_users/' + userId + '/referrals'));
+                if(s.exists()) {
+                    const refs = s.val();
+                    const count = Object.keys(refs).length;
+                    document.getElementById('ref-count').innerText = count;
+                    document.getElementById('ref-earnings').innerText = (count * 10000).toLocaleString();
+                }
+            } catch(e) { console.log(e); }
+        }
+
+        window.inviteFriends = () => {
+            const text = "Join Solana Miner Ultra and start earning SOL today! 🚀";
+            const url = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(text)}`;
+            tg.openTelegramLink(url);
+        }
+
+        window.copyLink = () => {
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                tg.showAlert("Link Copied!");
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
