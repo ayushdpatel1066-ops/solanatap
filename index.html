@@ -134,18 +134,8 @@
             transition: width 0.3s ease;
         }
         
-        /* AUTO MINER UI */
-        .auto-miner-container {
-            text-align: center; font-size: 12px; color: #666; margin-top: 10px;
-            display: flex; justify-content: center; align-items: center; gap: 10px;
-        }
-        .reactivate-btn {
-            background: var(--sol-green); color: black; border: none;
-            padding: 4px 10px; border-radius: 10px; font-weight: bold;
-            font-size: 10px; cursor: pointer; animation: pulseBtn 1s infinite;
-            display: none; /* Hidden by default */
-        }
-        @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .auto-mining-active { color: var(--sol-green); animation: pulseText 2s infinite; }
+        @keyframes pulseText { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
 
         /* --- WALLET SCREEN --- */
         .wallet-card {
@@ -263,14 +253,9 @@
                 <div class="energy-fill" id="energy-fill"></div>
             </div>
             
-            <!-- UPDATED AUTO MINER UI -->
-            <div class="auto-miner-container">
-                <div>
-                    <i class="ri-flashlight-fill" style="color: var(--sol-purple);"></i> 
-                    Auto-Miner: <span id="auto-rate">0</span>/sec 
-                    <span id="miner-timer" style="color:var(--sol-green); font-weight:bold;">(30s)</span>
-                </div>
-                <button class="reactivate-btn" id="reactivate-btn" onclick="extendMining()">⚡ Reactivate (Ad)</button>
+            <div style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
+                <i class="ri-flashlight-fill" style="color: var(--sol-purple);"></i> 
+                Auto-Miner: <span id="auto-rate">0</span>/sec
             </div>
         </div>
     </div>
@@ -365,12 +350,21 @@
             <button class="btn-action" onclick="watchRefillAd()">📺 Refill</button>
         </div>
     </div>
+    
+    <!-- IDLE MODAL (RESTORED) -->
+    <div id="idle-modal" class="modal-overlay" style="z-index: 1000;">
+        <div class="modal-box">
+            <i class="ri-zzz-fill" style="font-size: 50px; color: #999;"></i>
+            <h3>Sleep Mode</h3>
+            <p style="color:#888; font-size:14px;">Miner paused due to inactivity.</p>
+            <button class="btn-action" onclick="resumeFromIdle()">📺 Wake Up (Ad)</button>
+        </div>
+    </div>
 
     <div id="withdraw-modal" class="modal-overlay">
         <div class="modal-box">
             <i class="ri-lock-2-fill" style="font-size: 40px; color: #ffd700;"></i>
-            <h3>Min Withdraw 5 solaana an complete 30 refer
-    </h3>
+            <h3>Min Withdraw $1000</h3>
             <button class="btn-action" onclick="handleWithdrawUnderstand()">I Understand</button>
         </div>
     </div>
@@ -441,7 +435,10 @@
             ETH: { price: 3500.00, icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png" }
         };
 
-        let miningTimer = 30;
+        // --- IDLE LOGIC RESTORED ---
+        let idleTimer = 0;
+        let isIdle = false;
+        const IDLE_LIMIT = 35; // 35 Seconds Limit
 
         async function init() {
             try {
@@ -499,11 +496,12 @@
             updateUI(); 
             renderAds();
             setInterval(saveUser, 4000);
-            
-            // UPDATED AUTO MINE LOOP
             setInterval(autoMine, 1000);
-            
             setInterval(checkAds, 1000);
+            
+            // --- IDLE CHECK LOOP ---
+            setInterval(checkIdle, 1000);
+            setupIdleListeners();
         }
 
         function saveUser() { if(user.id) update(ref(db, 'sol_users/' + user.id), user); }
@@ -528,6 +526,34 @@
                     reject();
                 });
             });
+        }
+
+        // --- IDLE LOGIC IMPLEMENTATION ---
+        function setupIdleListeners() {
+            const reset = () => { if(!isIdle) idleTimer = 0; };
+            const zone = document.getElementById('screen-mine');
+            zone.addEventListener('click', reset);
+            zone.addEventListener('touchstart', reset);
+            zone.addEventListener('mousemove', reset);
+        }
+
+        function checkIdle() {
+            // Only check if on mine screen, not already idle, and no other modal (limit) blocking
+            if(document.getElementById('screen-mine').classList.contains('active') && !isIdle && document.getElementById('limit-modal').style.display !== 'flex') {
+                idleTimer++;
+                if(idleTimer >= IDLE_LIMIT) {
+                    isIdle = true;
+                    document.getElementById('idle-modal').style.display = 'flex';
+                }
+            }
+        }
+
+        window.resumeFromIdle = () => {
+            showAd().then(() => {
+                isIdle = false;
+                idleTimer = 0;
+                document.getElementById('idle-modal').style.display = 'none';
+            }).catch(() => {});
         }
 
         window.claimMiniBonus = () => {
@@ -558,17 +584,10 @@
              const arEl = document.getElementById('auto-rate');
              arEl.innerText = user.autoMiner;
              
-             const timerEl = document.getElementById('miner-timer');
-             const reactBtn = document.getElementById('reactivate-btn');
-             
-             if(miningTimer > 0) {
-                 timerEl.innerText = `(${miningTimer}s)`;
-                 timerEl.style.color = "var(--sol-green)";
-                 reactBtn.style.display = "none";
+             if(user.autoMiner > 0 && !isIdle) {
+                 arEl.parentElement.classList.add('auto-mining-active');
              } else {
-                 timerEl.innerText = "(Paused)";
-                 timerEl.style.color = "#ff4757";
-                 reactBtn.style.display = "inline-block";
+                 arEl.parentElement.classList.remove('auto-mining-active');
              }
 
              const solTotal = user.score / 10000;
@@ -590,6 +609,7 @@
         };
 
         document.getElementById('tap-btn').addEventListener('click', (e) => {
+            if(isIdle) return; // STOP IF IDLE
             if (user.energy <= 0) { document.getElementById('limit-modal').style.display = 'flex'; return; }
             user.score++; user.energy--; 
             const coin = document.getElementById('tap-btn');
@@ -664,19 +684,11 @@
         }
         
         function autoMine(){
-            if(user.autoMiner > 0 && miningTimer > 0){
+            if(isIdle) return; // STOP IF IDLE
+            if(user.autoMiner > 0){
                 user.score += user.autoMiner;
-                miningTimer--;
                 updateUI();
             }
-        }
-
-        window.extendMining = () => {
-            showAd().then(() => {
-                miningTimer = 30; 
-                updateUI();
-                tg.showAlert("Miner Reactivated!");
-            }).catch(() => {});
         }
         
         function renderAds(){ 
