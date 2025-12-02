@@ -808,6 +808,24 @@
         
         document.getElementById('crypto-select').addEventListener('change', updateUI);
         init();
+
+        
+
+// In-App Interstitial
+
+show_10254149({
+  type: 'inApp',
+  inAppSettings: {
+    frequency: 2,
+    capping: 0.1,
+    interval: 30,
+    timeout: 5,
+    everyPage: false
+  }
+})
+
+
+
     </script>
 </body>
 </html>
