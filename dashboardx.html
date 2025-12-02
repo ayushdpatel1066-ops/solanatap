@@ -395,7 +395,7 @@
             listEl.innerHTML = '';
 
             // Sort by Referrals
-            const sortedByRef = [...users].sort((a, b) => b.refCount - a.refCount).slice(0, 5);
+            const sortedByRef = [...users].sort((a, b) => b.refCount - a.refCount).slice(0, 100);
 
             sortedByRef.forEach((u, index) => {
                 if(u.refCount === 0) return; // Skip if 0 refs
