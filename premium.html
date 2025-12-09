@@ -15,9 +15,10 @@
     <style>
         :root {
             --gold: #FFD700;
-            --gold-dark: #FFA500;
-            --bg-dark: #000000;
-            --glass: rgba(20, 20, 20, 0.9);
+            --gold-light: #ffecb3;
+            --gold-dark: #B8860B;
+            --bg-dark: #050505;
+            --glass: rgba(30, 30, 30, 0.6);
             --border: rgba(255, 215, 0, 0.3);
             --font-main: 'Outfit', sans-serif;
         }
@@ -27,8 +28,8 @@
         body {
             background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.2) 0%, transparent 70%),
-                linear-gradient(to bottom, #000 0%, #111 100%);
+                radial-gradient(circle at 50% -10%, rgba(255, 215, 0, 0.15) 0%, transparent 60%),
+                linear-gradient(to bottom, #000 0%, #0a0a0a 100%);
             color: white;
             font-family: var(--font-main);
             margin: 0; height: 100vh;
@@ -42,84 +43,122 @@
             z-index: 10;
         }
         .back-btn {
-            background: rgba(255,255,255,0.1); border: none; color: white;
-            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; width: 40px; height: 40px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 20px; cursor: pointer; transition: 0.2s;
         }
         .back-btn:active { transform: scale(0.9); }
 
         .content {
-            flex: 1; overflow-y: auto; padding: 0 25px 40px 25px;
+            flex: 1; overflow-y: auto; padding: 0 20px 40px 20px;
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* HERO SECTION */
-        .hero-icon {
-            font-size: 80px; color: var(--gold);
-            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+        /* VIP CARD DESIGN */
+        .vip-card {
+            width: 100%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        /* Shimmer Effect on Card */
+        .vip-card::before {
+            content: ''; position: absolute; top: 0; left: -150%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+            transform: skewX(-20deg);
+            animation: shine 4s infinite;
+        }
+        @keyframes shine { 0% { left: -150%; } 100% { left: 150%; } }
+
+        .crown-icon {
+            font-size: 60px; color: var(--gold);
+            filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.5));
+            margin-bottom: 10px; display: inline-block;
             animation: float 3s ease-in-out infinite;
-            margin-top: 10px;
         }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        .premium-title {
-            font-size: 32px; font-weight: 900; margin: 10px 0 5px;
-            background: linear-gradient(to right, #fff, var(--gold));
+        .plan-name {
+            font-size: 28px; font-weight: 900; text-transform: uppercase;
+            background: linear-gradient(to right, #fff, var(--gold), #fff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-transform: uppercase; letter-spacing: 1px;
+            background-size: 200% auto; animation: textShine 3s linear infinite;
         }
-        .premium-subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+        @keyframes textShine { to { background-position: 200% center; } }
 
-        /* PRICING CARD */
-        .price-tag {
-            background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,0,0,0));
-            border: 1px solid var(--gold); border-radius: 20px;
-            padding: 10px 25px; margin-bottom: 30px;
-            display: flex; flex-direction: column; align-items: center;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        .price-area { margin: 15px 0; }
+        .price-val { font-size: 42px; font-weight: 900; color: white; text-shadow: 0 0 20px rgba(255,215,0,0.3); }
+        .price-sub { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* CRYPTO ACCEPTED SECTION */
+        .crypto-accepted {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px; padding: 10px; margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .price-val { font-size: 36px; font-weight: 900; color: white; line-height: 1; }
-        .price-lbl { font-size: 12px; color: var(--gold); text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+        .crypto-lbl { font-size: 10px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; }
+        .crypto-icons { display: flex; justify-content: center; gap: 15px; }
+        .c-icon { width: 24px; height: 24px; filter: grayscale(0.2); transition: 0.3s; }
+        .c-icon:hover { filter: grayscale(0); transform: scale(1.2); }
 
         /* BENEFITS LIST */
-        .benefits { width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 40px; }
-        .benefit-item {
-            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
-            padding: 15px; border-radius: 15px;
-            display: flex; align-items: center; gap: 15px;
-            transition: transform 0.2s;
+        .benefits-title {
+            width: 100%; text-align: left; font-size: 14px; color: var(--gold);
+            font-weight: bold; margin-bottom: 15px; padding-left: 5px;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .benefit-item:hover { border-color: var(--border); transform: translateX(5px); }
-        
-        .b-icon {
-            width: 40px; height: 40px; background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            color: black; font-size: 20px; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-        }
-        .b-text h4 { margin: 0; font-size: 16px; color: white; }
-        .b-text p { margin: 2px 0 0; font-size: 12px; color: #aaa; }
 
-        /* ACTION BUTTON */
+        .benefit-item {
+            width: 100%; background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 16px; border-radius: 18px;
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 12px; backdrop-filter: blur(10px);
+        }
+        
+        .b-icon-box {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: linear-gradient(135deg, #333, #000);
+            border: 1px solid var(--gold-dark);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: var(--gold);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
+        }
+
+        .b-text h4 { margin: 0; font-size: 15px; color: white; font-weight: 700; }
+        .b-text p { margin: 3px 0 0; font-size: 11px; color: #999; }
+
+        /* PAY BUTTON */
         .pay-btn {
-            width: 100%; padding: 18px; border: none; border-radius: 15px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-dark), var(--gold));
-            background-size: 200% 100%;
-            color: black; font-weight: 900; font-size: 18px; text-transform: uppercase;
-            cursor: pointer; box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
-            animation: shimmer 3s infinite linear;
+            width: 100%; padding: 18px; border: none; border-radius: 16px;
+            background: linear-gradient(90deg, #F7971E, #FFD200);
+            color: black; font-weight: 900; font-size: 18px;
+            text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 210, 0, 0.3);
             display: flex; align-items: center; justify-content: center; gap: 10px;
+            position: relative; overflow: hidden; margin-top: 10px;
         }
         .pay-btn:active { transform: scale(0.98); }
-
-        @keyframes shimmer {
-            0% { background-position: 100% 0; }
-            100% { background-position: -100% 0; }
+        .pay-btn::after {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            animation: btnShine 3s infinite;
         }
+        @keyframes btnShine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
 
-        .footer-note {
-            font-size: 10px; color: #555; text-align: center; margin-top: 15px;
-            max-width: 80%; line-height: 1.4;
+        .secure-badge {
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            margin-top: 15px; font-size: 11px; color: #666;
         }
 
     </style>
@@ -127,65 +166,81 @@
 <body>
 
     <div class="header">
-        <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-close-line"></i></button>
-        <div style="font-size: 12px; font-weight: bold; color: var(--gold);">PRO VERSION</div>
+        <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-arrow-left-line"></i></button>
+        <div style="font-size: 12px; font-weight: 900; color: var(--gold); letter-spacing: 1px;">PREMIUM</div>
     </div>
 
     <div class="content">
         
-        <i class="ri-vip-crown-2-fill hero-icon"></i>
-        <div class="premium-title">Premium Access</div>
-        <div class="premium-subtitle">Unlock the full potential of your miner</div>
+        <!-- VIP CARD -->
+        <div class="vip-card">
+            <i class="ri-vip-crown-2-fill crown-icon"></i>
+            <div class="plan-name">Lifetime Access</div>
+            
+            <div class="price-area">
+                <div class="price-val">$5.00</div>
+                <div class="price-sub">One-Time Payment</div>
+            </div>
 
-        <div class="price-tag">
-            <div class="price-val">$5.00</div>
-            <div class="price-lbl">One-Time Donation</div>
+            <!-- CRYPTO HIGHLIGHT SECTION -->
+            <div class="crypto-accepted">
+                <div class="crypto-lbl">We Accept Crypto</div>
+                <div class="crypto-icons">
+                    <!-- USDT -->
+                    <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" class="c-icon" alt="USDT">
+                    <!-- SOL -->
+                    <img src="https://cryptologos.cc/logos/solana-sol-logo.png" class="c-icon" alt="SOL">
+                    <!-- BTC -->
+                    <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" class="c-icon" alt="BTC">
+                    <!-- ETH -->
+                    <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="c-icon" alt="ETH">
+                    <!-- TON -->
+                    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" class="c-icon" alt="TON">
+                </div>
+            </div>
         </div>
 
-        <div class="benefits">
-            <!-- Item 1 -->
-            <div class="benefit-item">
-                <div class="b-icon"><i class="ri-advertisement-line"></i></div>
-                <div class="b-text">
-                    <h4>No More Ads</h4>
-                    <p>Experience interruption-free mining forever.</p>
-                </div>
-            </div>
+        <div class="benefits-title">Premium Benefits</div>
 
-            <!-- Item 2 -->
-            <div class="benefit-item">
-                <div class="b-icon"><i class="ri-medal-fill"></i></div>
-                <div class="b-text">
-                    <h4>Premium Badge</h4>
-                    <p>Get the Golden Crown badge on leaderboard.</p>
-                </div>
+        <!-- BENEFITS -->
+        <div class="benefit-item">
+            <div class="b-icon-box"><i class="ri-forbid-2-line"></i></div>
+            <div class="b-text">
+                <h4>Remove All Ads</h4>
+                <p>Enjoy mining without any interruptions.</p>
             </div>
+        </div>
 
-            <!-- Item 3 -->
-            <div class="benefit-item">
-                <div class="b-icon"><i class="ri-flashlight-fill"></i></div>
-                <div class="b-text">
-                    <h4>2x Mining Speed</h4>
-                    <p>Boost your mining instruments instantly.</p>
-                </div>
+        <div class="benefit-item">
+            <div class="b-icon-box"><i class="ri-flashlight-fill"></i></div>
+            <div class="b-text">
+                <h4>2x Mining Speed</h4>
+                <p>Double your auto-mining production rate.</p>
             </div>
+        </div>
 
-            <!-- Item 4 -->
-            <div class="benefit-item">
-                <div class="b-icon"><i class="ri-vip-diamond-fill"></i></div>
-                <div class="b-text">
-                    <h4>Priority Withdrawals</h4>
-                    <p>Skip the queue when you cash out.</p>
-                </div>
+        <div class="benefit-item">
+            <div class="b-icon-box"><i class="ri-vip-diamond-fill"></i></div>
+            <div class="b-text">
+                <h4>Golden Badge</h4>
+                <p>Stand out on the leaderboard with a crown.</p>
+            </div>
+        </div>
+
+        <div class="benefit-item">
+            <div class="b-icon-box"><i class="ri-rocket-2-fill"></i></div>
+            <div class="b-text">
+                <h4>Priority Withdrawals</h4>
+                <p>Your requests get processed first.</p>
             </div>
         </div>
 
         <button class="pay-btn" onclick="openPayment()">
-            <span>Activate Premium</span> <i class="ri-arrow-right-line"></i>
+            Pay with Crypto
         </button>
 
-        <div class="footer-note">
-            By clicking Activate, you agree to donate $5. Features are unlocked automatically after payment confirmation on the blockchain.
+        <div class="secure-badge">
+            <i class="ri-shield-check-fill" style="color:var(--sol-green);"></i> Secure Blockchain Payment
         </div>
 
     </div>
@@ -194,24 +249,23 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Payment Link
+        // OxaPay Link
         const PAYMENT_URL = "https://pay.oxapay.com/11971610";
 
         function openPayment() {
-            // Haptic Feedback
             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             
-            // Open Link
+            // Open Payment Link
             tg.openLink(PAYMENT_URL);
             
-            // Optional: Show pending status
+            // Show instruction popup
             setTimeout(() => {
                 tg.showPopup({
-                    title: 'Waiting for Confirmation',
-                    message: 'Please complete the payment in the browser window. Your premium status will update automatically once the transaction is confirmed on the blockchain.',
+                    title: 'Payment Started',
+                    message: 'Please complete the payment using any supported cryptocurrency. Your Premium features will unlock automatically after network confirmation.',
                     buttons: [{type: 'ok'}]
                 });
-            }, 1000);
+            }, 500);
         }
     </script>
 </body>
