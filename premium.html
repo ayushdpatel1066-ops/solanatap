@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium - Solana Miner</title>
+    
+    <!-- FONTS & ICONS -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- SDKS -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --gold: #FFD700;
+            --gold-dark: #FFA500;
+            --bg-dark: #000000;
+            --glass: rgba(20, 20, 20, 0.9);
+            --border: rgba(255, 215, 0, 0.3);
+            --font-main: 'Outfit', sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.2) 0%, transparent 70%),
+                linear-gradient(to bottom, #000 0%, #111 100%);
+            color: white;
+            font-family: var(--font-main);
+            margin: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            padding: 20px; display: flex; align-items: center; justify-content: space-between;
+            z-index: 10;
+        }
+        .back-btn {
+            background: rgba(255,255,255,0.1); border: none; color: white;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer; transition: 0.2s;
+        }
+        .back-btn:active { transform: scale(0.9); }
+
+        .content {
+            flex: 1; overflow-y: auto; padding: 0 25px 40px 25px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* HERO SECTION */
+        .hero-icon {
+            font-size: 80px; color: var(--gold);
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+            animation: float 3s ease-in-out infinite;
+            margin-top: 10px;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .premium-title {
+            font-size: 32px; font-weight: 900; margin: 10px 0 5px;
+            background: linear-gradient(to right, #fff, var(--gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .premium-subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+
+        /* PRICING CARD */
+        .price-tag {
+            background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,0,0,0));
+            border: 1px solid var(--gold); border-radius: 20px;
+            padding: 10px 25px; margin-bottom: 30px;
+            display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        }
+        .price-val { font-size: 36px; font-weight: 900; color: white; line-height: 1; }
+        .price-lbl { font-size: 12px; color: var(--gold); text-transform: uppercase; font-weight: bold; margin-top: 5px; }
+
+        /* BENEFITS LIST */
+        .benefits { width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 40px; }
+        .benefit-item {
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; border-radius: 15px;
+            display: flex; align-items: center; gap: 15px;
+            transition: transform 0.2s;
+        }
+        .benefit-item:hover { border-color: var(--border); transform: translateX(5px); }
+        
+        .b-icon {
+            width: 40px; height: 40px; background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            color: black; font-size: 20px; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+        .b-text h4 { margin: 0; font-size: 16px; color: white; }
+        .b-text p { margin: 2px 0 0; font-size: 12px; color: #aaa; }
+
+        /* ACTION BUTTON */
+        .pay-btn {
+            width: 100%; padding: 18px; border: none; border-radius: 15px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-dark), var(--gold));
+            background-size: 200% 100%;
+            color: black; font-weight: 900; font-size: 18px; text-transform: uppercase;
+            cursor: pointer; box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
+            animation: shimmer 3s infinite linear;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .pay-btn:active { transform: scale(0.98); }
+
+        @keyframes shimmer {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+
+        .footer-note {
+            font-size: 10px; color: #555; text-align: center; margin-top: 15px;
+            max-width: 80%; line-height: 1.4;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='index.html'"><i class="ri-close-line"></i></button>
+        <div style="font-size: 12px; font-weight: bold; color: var(--gold);">PRO VERSION</div>
+    </div>
+
+    <div class="content">
+        
+        <i class="ri-vip-crown-2-fill hero-icon"></i>
+        <div class="premium-title">Premium Access</div>
+        <div class="premium-subtitle">Unlock the full potential of your miner</div>
+
+        <div class="price-tag">
+            <div class="price-val">$5.00</div>
+            <div class="price-lbl">One-Time Donation</div>
+        </div>
+
+        <div class="benefits">
+            <!-- Item 1 -->
+            <div class="benefit-item">
+                <div class="b-icon"><i class="ri-advertisement-line"></i></div>
+                <div class="b-text">
+                    <h4>No More Ads</h4>
+                    <p>Experience interruption-free mining forever.</p>
+                </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="benefit-item">
+                <div class="b-icon"><i class="ri-medal-fill"></i></div>
+                <div class="b-text">
+                    <h4>Premium Badge</h4>
+                    <p>Get the Golden Crown badge on leaderboard.</p>
+                </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="benefit-item">
+                <div class="b-icon"><i class="ri-flashlight-fill"></i></div>
+                <div class="b-text">
+                    <h4>2x Mining Speed</h4>
+                    <p>Boost your mining instruments instantly.</p>
+                </div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="benefit-item">
+                <div class="b-icon"><i class="ri-vip-diamond-fill"></i></div>
+                <div class="b-text">
+                    <h4>Priority Withdrawals</h4>
+                    <p>Skip the queue when you cash out.</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="pay-btn" onclick="openPayment()">
+            <span>Activate Premium</span> <i class="ri-arrow-right-line"></i>
+        </button>
+
+        <div class="footer-note">
+            By clicking Activate, you agree to donate $5. Features are unlocked automatically after payment confirmation on the blockchain.
+        </div>
+
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Payment Link
+        const PAYMENT_URL = "https://pay.oxapay.com/11971610";
+
+        function openPayment() {
+            // Haptic Feedback
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+            
+            // Open Link
+            tg.openLink(PAYMENT_URL);
+            
+            // Optional: Show pending status
+            setTimeout(() => {
+                tg.showPopup({
+                    title: 'Waiting for Confirmation',
+                    message: 'Please complete the payment in the browser window. Your premium status will update automatically once the transaction is confirmed on the blockchain.',
+                    buttons: [{type: 'ok'}]
+                });
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
